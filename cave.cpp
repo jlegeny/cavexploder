@@ -39,7 +39,7 @@ void Cave::generate(float startx, float endx) {
                  .r = radius,
                  .shade = shade,
                  .vertices = generateVertices(radius)};
-    ceiling.push_back(p);
+    ceiling.emplace(x, p);
   }
 
   for (int i = 0; i < static_cast<int>(density * (endx - startx)); ++i) {
@@ -54,6 +54,6 @@ void Cave::generate(float startx, float endx) {
                  .r = radius,
                  .shade = shade,
                  .vertices = generateVertices(radius)};
-    floor.push_back(p);
+    floor.emplace(x, p);
   }
 }

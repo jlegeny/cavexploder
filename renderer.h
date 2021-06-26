@@ -22,8 +22,10 @@ class Renderer
   Pixel toPixel(float x, float y) const;
 
  private:
-  void drawBoulder(const Boulder& boulder, float offsetx, float offsety);
   void drawShip(const Ship& ship, float offsetx, float offsety);
+  void drawBoulder(const Boulder& boulder, float offsetx, float offsety);
+  void drawBoulderOutline(const Boulder& boulder, float offsetx, float offsety,
+                          uint32_t color);
 
  private:
   SDL_Renderer* renderer_;

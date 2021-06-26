@@ -2,6 +2,7 @@
 #define GAME_H
 
 #include <unordered_set>
+#include <vector>
 
 #include "cave.h"
 
@@ -19,6 +20,7 @@ class Game
 
   void update(uint32_t dt);
   void commands(const std::unordered_set<Command>& commands);
+  void checkCollisions();
 
  public:
   Cave cave;
@@ -26,11 +28,11 @@ class Game
   float offsety = 0;
 
   Ship ship;
+  std::vector<Boulder> collisions;
 
  private:
-  uint32_t time;
-  float speed = 0.0005;  // u/ms
-
+  uint32_t time_;
+  float speed_ = 0.0005 * 0;  // u/ms
   float last_gen = 0;
 };
 

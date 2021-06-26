@@ -2,7 +2,7 @@
 #define CAVE_H
 
 #include <cstdint>
-#include <deque>
+#include <map>
 #include <random>
 #include <vector>
 
@@ -20,6 +20,7 @@ struct Boulder {
 struct Ship {
   float x, y;
   float vx, vy;
+  float r;
 };
 
 class Cave
@@ -29,8 +30,8 @@ class Cave
 
   void generate(float startx, float endx);
 
-  std::deque<Boulder> ceiling;
-  std::deque<Boulder> floor;
+  std::map<float, Boulder> ceiling;
+  std::map<float, Boulder> floor;
 
  private:
   std::vector<Point> generateVertices(float radius);

@@ -12,9 +12,10 @@ constexpr float horizontal_speed = 0.2;
 
 Game::Game()
     : ship()
-    , time(0) {
+    , time_(0) {
   ship.x = 0.1;
   ship.y = 0.5;
+  ship.r = 0.0125;
   last_gen = 1.8f;
   cave.generate(0.f, last_gen);
 }
@@ -49,25 +50,35 @@ void Game::commands(const std::unordered_set<Command>& commands) {
   }
 };
 
+void Game::checkCollisions() {
+  collisions.clear();
+  for (const auto& boulders : {cave.ceiling, cave.floor}) {
+    for (auto it = boulders.lower_bound(ship.x - 0.1);
+         it != boulders.upper_bound(ship.x + 0.1); ++it) {
+      if ((ship.x - it->second.x) * (ship.x - it->second.x) +
+              (ship.y - it->second.y) * (ship.y - it->second.y) <
+          (ship.r + it->second.r) * (ship.r + it->second.r)) {
+        collisions.push_back(it->second);
+      }
+    }
+  }
+}
+
 void Game::update(uint32_t dt) {
   ship.y += ship.vy * vertical_speed * (dt / 1000.f);
   ship.x += ship.vx * horizontal_speed * (dt / 1000.f);
 
-  ship.x -= dt * speed;
+  ship.x += dt * speed_;
   if (last_gen - offsetx <= 2.0) {
     float next_gen = offsetx + 2.2;
     cave.generate(last_gen, next_gen);
     last_gen = next_gen;
   }
-  offsetx += dt * speed;
+  offsetx += dt * speed_;
 
-  auto clearBoulders = [this](std::deque<Boulder>& queue) {
-    while (queue.front().x < this->offsetx - 0.2) {
-      queue.pop_front();
-    }
-  };
+  cave.ceiling.erase(cave.ceiling.begin(),
+                     cave.ceiling.lower_bound(offsetx - 0.2));
+  cave.floor.erase(cave.floor.begin(), cave.floor.lower_bound(offsetx - 0.2));
 
-  clearBoulders(cave.ceiling);
-  clearBoulders(cave.floor);
-  fflush(stdout);
+  checkCollisions();
 }

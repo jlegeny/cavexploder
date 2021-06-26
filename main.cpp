@@ -100,6 +100,11 @@ int main() {
     FC_Draw(font.get(), sdl_renderer, 20, 44, "Vertical Thrust: %f",
             game.ship.vy);
 
+    FC_Draw(font.get(), sdl_renderer, 20, 56, "Boulders: %zu, %zu",
+            game.cave.ceiling.size(), game.cave.floor.size());
+
+    FC_Draw(font.get(), sdl_renderer, 20, 68, "Collisions: %zu",
+            game.collisions.size());
     SDL_RenderPresent(sdl_renderer);
     ++frame;
   }
