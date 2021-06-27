@@ -129,28 +129,30 @@ void Cave::generate(float startx, float endx) {
       if (!floor_envelope.count(ex) || floor_envelope[ex] > ley) {
         floor_envelope[ex] = ley;
       }
-      if (d(generator_) <
-          spider_probability * envelope_presicion * (100.f + startx) / 100.f) {
-        float spider_r = d_spider_r(generator_);
-        float spider_speed = d_spider_speed(generator_);
-        floor_spiders.push_back({
-            .x = ex,
-            .y = floor_envelope[ex],
-            .walking = true,
-            .from = ex,
-            .to = ex - envelope_presicion,
-            .t = 0,
-            .r = spider_r,
-            .speed = spider_speed,
-            .health = 10,
-            .forward = true,
-            .burst_rate = d_spider_burst_rate(generator_),
-            .burst = 0,
-            .cooldown = 0.f,
-            .fire_rate = d_spider_fire_rate(generator_),
-            .burst_fire_rate = d_spider_burst_fire_rate(generator_),
-            .spit_speed = d_spider_spit_speed(generator_),
-        });
+      if (endx > 2.4) {
+        if (d(generator_) < spider_probability * envelope_presicion *
+                                (100.f + startx) / 100.f) {
+          float spider_r = d_spider_r(generator_);
+          float spider_speed = d_spider_speed(generator_);
+          floor_spiders.push_back({
+              .x = ex,
+              .y = floor_envelope[ex],
+              .walking = true,
+              .from = ex,
+              .to = ex - envelope_presicion,
+              .t = 0,
+              .r = spider_r,
+              .speed = spider_speed,
+              .health = 10,
+              .forward = true,
+              .burst_rate = d_spider_burst_rate(generator_),
+              .burst = 0,
+              .cooldown = 0.f,
+              .fire_rate = d_spider_fire_rate(generator_),
+              .burst_fire_rate = d_spider_burst_fire_rate(generator_),
+              .spit_speed = d_spider_spit_speed(generator_),
+          });
+        }
       }
     }
 

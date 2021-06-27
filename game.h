@@ -31,6 +31,7 @@ class Game
   Ship ship;
   std::vector<Boulder> collisions;
 
+  bool started = false;
   bool gameover = false;
   bool debug = false;
   float multiplier = 1.0;

@@ -122,6 +122,9 @@ void Game::checkCollisions() {
 }
 
 void Game::update(uint32_t dt) {
+  if (!started) {
+    return;
+  }
   const float dts = dt / 1000.f;
   const float offset = dts * speed_ * gameover_slowdown * multiplier;
 

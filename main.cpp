@@ -66,13 +66,16 @@ int main() {
           event.window.windowID == SDL_GetWindowID(window)) {
         done = true;
       }
-      if (event.type == SDL_KEYDOWN &&
-          event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
-        game.ship.health = 0;
-      }
-      if (event.type == SDL_KEYDOWN &&
-          event.key.keysym.scancode == SDL_SCANCODE_F1) {
-        game.debug = !game.debug;
+      if (event.type == SDL_KEYDOWN) {
+        if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
+          game.ship.health = 0;
+        }
+        if (event.key.keysym.scancode == SDL_SCANCODE_F1) {
+          game.debug = !game.debug;
+        }
+        if (!game.started && event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
+          game.started = true;
+        }
       }
     }
 
@@ -97,7 +100,9 @@ int main() {
     if (kbd_state[SDL_SCANCODE_SPACE]) {
       commands.insert({Command::FIRE});
     }
-    game.commands(commands);
+    if (!game.gameover) {
+      game.commands(commands);
+    }
 
     uint32_t ticks = SDL_GetTicks();
     uint32_t dt = ticks - last_ticks;
@@ -145,6 +150,21 @@ int main() {
               game.collisions.size());
     }
 
+    if (!game.started) {
+      FC_Draw(bigfont.get(), sdl_renderer, 400, 150,
+              "           Welcome!"
+              "\n\n"
+              "  ASDF or Arrow Keys to move"
+              "\n"
+              "        Space to fire"
+              "\n"
+              "      Escape to give up"
+              "\n\n"
+              "Press Space to start the game."
+              "\n"
+              "          Good Luck",
+              game.score);
+    }
     if (game.gameover && game.cave.boulders.empty() &&
         game.cave.debris.empty()) {
       FC_Draw(bigfont.get(), sdl_renderer, 550, 250,
