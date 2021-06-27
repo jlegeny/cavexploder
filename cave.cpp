@@ -5,6 +5,7 @@
 constexpr int density = 80;
 constexpr float envelope_presicion = 1.f / 128.f;
 constexpr float spider_probability = 0.1;
+constexpr float formation_probablity = 0.005;
 
 Cave::Cave(int seed)
     : generator_(seed) {}
@@ -112,6 +113,9 @@ void Cave::generate(float startx, float endx) {
   for (int i = 0; i < static_cast<int>(density * (endx - startx)); ++i) {
     float x = startx + d(generator_) * (endx - startx);
     float y = d(generator_) * -fabs(cos(x) + sin(3 * x)) * 0.3 + 1.05;
+    if (endx < 2) {
+      y = std::max(y, 0.85f);
+    }
 
     float radius = d_radius(generator_);
     int shade = d_shade(generator_);
@@ -125,7 +129,8 @@ void Cave::generate(float startx, float endx) {
       if (!floor_envelope.count(ex) || floor_envelope[ex] > ley) {
         floor_envelope[ex] = ley;
       }
-      if (d(generator_) < spider_probability * envelope_presicion) {
+      if (d(generator_) <
+          spider_probability * envelope_presicion * (100.f + startx) / 100.f) {
         float spider_r = d_spider_r(generator_);
         float spider_speed = d_spider_speed(generator_);
         floor_spiders.push_back({
@@ -153,8 +158,30 @@ void Cave::generate(float startx, float endx) {
                  .y = y,
                  .r = radius,
                  .shade = shade,
-                 .health = static_cast<int>(radius * 1000),
+                 .health = static_cast<int>(radius * 3000),
                  .vertices = generateVertices(radius)};
     boulders.emplace(x, p);
+  }
+
+  // formations
+  float p_formation = d(generator_);
+  if (p_formation * (endx - startx) <
+      formation_probablity + (startx / 1000.f)) {
+    float length = endx - startx;
+    for (int i = 0; i < static_cast<int>(density * length * 0.5); ++i) {
+      float x = startx + 0.25 * length + d(generator_) * 0.5 * length;
+      float y = d(generator_) * fabs(sin(x)) * 0.95 - 0.05;
+
+      float radius = d_radius(generator_) * (1 + ((0.5 - y) * (0.5 - y)));
+      int shade = d_shade(generator_);
+
+      Boulder p = {.x = x,
+                   .y = y,
+                   .r = radius,
+                   .shade = shade,
+                   .health = static_cast<int>(radius * 1000),
+                   .vertices = generateVertices(radius)};
+      boulders.emplace(x, p);
+    }
   }
 }

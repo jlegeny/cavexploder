@@ -125,12 +125,12 @@ void Renderer::drawShip(const Ship& ship, float offsetx, float offsety) {
 
 void Renderer::drawBullet(const Bullet& bullet, float offsetx, float offsety) {
   static constexpr uint32_t bullet_color = 0xf00050ff;
-  Pixel pa = toPixel(bullet.x - offsetx + bullet.nx * 0.00,
+  Pixel pa = toPixel(bullet.x - offsetx + bullet.nx * 0.003,
                      bullet.y - offsety - bullet.ny * 0.003);
-  Pixel pb = toPixel(bullet.x - offsetx + bullet.nx * 0.00,
+  Pixel pb = toPixel(bullet.x - offsetx + bullet.nx * 0.003,
                      bullet.y - offsety + bullet.ny * 0.003);
   Pixel pc = toPixel(bullet.x - offsetx - bullet.vx * 0.025,
-                     bullet.y - offsety + bullet.vy * 0.00);
+                     bullet.y - offsety - bullet.vy * 0.025);
   filledTrigonColor(renderer_, pa.x, pa.y, pb.x, pb.y, pc.x, pc.y,
                     bullet_color);
 }

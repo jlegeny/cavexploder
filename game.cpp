@@ -59,7 +59,16 @@ void Game::commands(const std::unordered_set<Command>& commands) {
   }
 
   if (ship.cannon_cooldown == 0 && commands.contains(Command::FIRE)) {
-    if (commands.contains(Command::FIRE_4)) {
+    if (fired_forward) {
+      cave.bullets.push_back({.x = ship.x,
+                              .y = ship.y,
+                              .vx = sqrt(3.f) / 2.f,
+                              .vy = 0.5f,
+                              .nx = 0.5f,
+                              .ny = -sqrt(3.f) / 2.f,
+                              .damage = bullet_damage,
+                              .dead = false});
+    } else {
       cave.bullets.push_back({.x = ship.x,
                               .y = ship.y,
                               .vx = 1.f,
@@ -69,6 +78,7 @@ void Game::commands(const std::unordered_set<Command>& commands) {
                               .damage = bullet_damage,
                               .dead = false});
     }
+    fired_forward = !fired_forward;
     ship.cannon_cooldown = cannon_speed;
   }
 };
@@ -104,7 +114,8 @@ void Game::checkCollisions() {
           (boulder.r) * (boulder.r)) {
         bullet.dead = true;
         boulder.damaged_cooldown = 50;
-        boulder.health -= bullet.damage;
+        boulder.health -= bullet.damage * multiplier;
+        score += 50 * boulder.r * multiplier;
       }
     }
   }
@@ -112,12 +123,21 @@ void Game::checkCollisions() {
 
 void Game::update(uint32_t dt) {
   const float dts = dt / 1000.f;
-  const float offset = dts * speed_ * gameover_slowdown;
+  const float offset = dts * speed_ * gameover_slowdown * multiplier;
 
   ship.y += ship.vy * vertical_speed * dts;
   ship.x += ship.vx * horizontal_speed * dts;
 
   ship.x += offset;
+
+  if (ship.x < offsetx) {
+    ship.x = offsetx;
+  }
+  if (ship.x > offsetx + 1.77) {
+    ship.x = offsetx + 1.77;
+  }
+  ship.y = std::min(std::max(ship.y, 0.f), 1.f);
+
   if (last_gen - offsetx <= 2.0) {
     float next_gen = offsetx + 2.2;
     cave.generate(last_gen, next_gen);
@@ -261,6 +281,9 @@ void Game::update(uint32_t dt) {
     if (ship.health <= 0) {
       gameover = true;
     }
+    multiplier = std::max(multiplier - dts * 3, 1.f);
+  } else {
+    multiplier += 0.03 * dts;
   }
 
   if (gameover) {
@@ -269,13 +292,15 @@ void Game::update(uint32_t dt) {
     }
     if (gameover_countdown > 0) {
       gameover_countdown = std::max<int>(gameover_countdown - dt, 0);
-    }
-    if (gameover_countdown == 0) {
+    } else if (gameover_countdown == 0) {
       for (auto& [x, boulder] : cave.boulders) {
         boulder.dead = true;
         cave.explodeBoulder(boulder);
       }
+      cave.boulders.clear();
       gameover_countdown = -1;
     }
+  } else {
+    score += multiplier * multiplier * dt;
   }
 }

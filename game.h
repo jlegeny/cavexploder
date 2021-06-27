@@ -12,7 +12,6 @@ enum class Command {
   THRUST_FORWARD,
   THRUST_BACKWARD,
   FIRE,
-  FIRE_4,
 };
 
 class Game
@@ -33,7 +32,9 @@ class Game
   std::vector<Boulder> collisions;
 
   bool gameover = false;
-  bool debug = true;
+  bool debug = false;
+  float multiplier = 1.0;
+  uint64_t score = 0;
 
  private:
   uint32_t time_;
@@ -41,6 +42,7 @@ class Game
   float last_gen = 0;
   int gameover_countdown = 2000;
   float gameover_slowdown = 1.0;
+  bool fired_forward = false;
 };
 
 #endif // GAME_H

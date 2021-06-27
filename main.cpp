@@ -39,7 +39,11 @@ int main() {
 
   std::unique_ptr<FC_Font, void (*)(FC_Font*)> font(FC_CreateFont(),
                                                     FC_FreeFont);
+  std::unique_ptr<FC_Font, void (*)(FC_Font*)> bigfont(FC_CreateFont(),
+                                                       FC_FreeFont);
   FC_LoadFont(font.get(), sdl_renderer, "IBMPlexMono-Medium.ttf", 10,
+              FC_MakeColor(0, 255, 0, 255), TTF_STYLE_NORMAL);
+  FC_LoadFont(bigfont.get(), sdl_renderer, "IBMPlexMono-Medium.ttf", 30,
               FC_MakeColor(0, 255, 0, 255), TTF_STYLE_NORMAL);
 
   Game game;
@@ -63,6 +67,10 @@ int main() {
         done = true;
       }
       if (event.type == SDL_KEYDOWN &&
+          event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
+        game.ship.health = 0;
+      }
+      if (event.type == SDL_KEYDOWN &&
           event.key.keysym.scancode == SDL_SCANCODE_F1) {
         game.debug = !game.debug;
       }
@@ -74,16 +82,20 @@ int main() {
 
     commands.clear();
     const Uint8* kbd_state = SDL_GetKeyboardState(NULL);
-    if (kbd_state[SDL_SCANCODE_UP] ^ kbd_state[SDL_SCANCODE_DOWN]) {
-      commands.insert(kbd_state[SDL_SCANCODE_UP] ? Command::THRUST_UP
-                                                 : Command::THRUST_DOWN);
+    if (kbd_state[SDL_SCANCODE_UP] ^ kbd_state[SDL_SCANCODE_DOWN] ^
+        kbd_state[SDL_SCANCODE_W] ^ kbd_state[SDL_SCANCODE_S]) {
+      commands.insert(kbd_state[SDL_SCANCODE_UP] || kbd_state[SDL_SCANCODE_W]
+                          ? Command::THRUST_UP
+                          : Command::THRUST_DOWN);
     }
-    if (kbd_state[SDL_SCANCODE_RIGHT] ^ kbd_state[SDL_SCANCODE_LEFT]) {
-      commands.insert(kbd_state[SDL_SCANCODE_RIGHT] ? Command::THRUST_FORWARD
-                                                    : Command::THRUST_BACKWARD);
+    if (kbd_state[SDL_SCANCODE_RIGHT] ^ kbd_state[SDL_SCANCODE_LEFT] ^
+        kbd_state[SDL_SCANCODE_A] ^ kbd_state[SDL_SCANCODE_D]) {
+      commands.insert(kbd_state[SDL_SCANCODE_RIGHT] || kbd_state[SDL_SCANCODE_D]
+                          ? Command::THRUST_FORWARD
+                          : Command::THRUST_BACKWARD);
     }
-    if (kbd_state[SDL_SCANCODE_D]) {
-      commands.insert({Command::FIRE, Command::FIRE_4});
+    if (kbd_state[SDL_SCANCODE_SPACE]) {
+      commands.insert({Command::FIRE});
     }
     game.commands(commands);
 
@@ -96,8 +108,14 @@ int main() {
 
     if (game.debug) {
       int stri = 0;
+      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Score: %d",
+              game.score);
       FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "FPS: %.1f",
               1000.f / dt);
+      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "HP: %d",
+              game.ship.health);
+      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Multiplier: %.3f",
+              game.multiplier);
 
       std::string commands_str = "";
       commands_str += commands.contains(Command::THRUST_BACKWARD) ? "<" : " ";
@@ -125,6 +143,12 @@ int main() {
               game.cave.floor_envelope.size());
       FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Collisions: %zu",
               game.collisions.size());
+    }
+
+    if (game.gameover && game.cave.boulders.empty() &&
+        game.cave.debris.empty()) {
+      FC_Draw(bigfont.get(), sdl_renderer, 550, 250,
+              "Game Over\n\nFinal Score\n%d", game.score);
     }
 
     SDL_RenderPresent(sdl_renderer);
