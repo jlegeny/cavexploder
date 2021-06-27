@@ -42,8 +42,8 @@ void Cave::explodeBoulder(const Boulder &boulder) {
     debris.push_back({.x = boulder.x,
                       .y = boulder.y,
                       .am = 0.f,
-                      .vx = sin(theta),
-                      .vy = cos(theta),
+                      .vx = sinf(theta),
+                      .vy = cosf(theta),
                       .shade = boulder.shade,
                       .vertices = vertices});
   }

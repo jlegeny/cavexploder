@@ -2,6 +2,7 @@
 #include <SDL_FontCache.h>
 
 #include <iostream>
+#include <memory>
 #include <unordered_set>
 
 #include "game.h"
@@ -22,8 +23,8 @@ int main() {
 
   SDL_Window* window = SDL_CreateWindow(
       "Cave Horizotal Scrolling Shooter", SDL_WINDOWPOS_CENTERED,
-      SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT,
-      /*SDL_WINDOW_RESIZABLE |*/ SDL_WINDOW_ALLOW_HIGHDPI);
+      SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0
+      /*SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI*/);
   if (window == NULL) {
     printf("Error creating window: %s\n", SDL_GetError());
     return -2;
@@ -35,7 +36,7 @@ int main() {
     printf("Error creating renderer: %s\n", SDL_GetError());
     return -3;
   }
-  SDL_RenderSetScale(sdl_renderer, 2, 2);
+  SDL_RenderSetScale(sdl_renderer, 1, 1);
 
   std::unique_ptr<FC_Font, void (*)(FC_Font*)> font(FC_CreateFont(),
                                                     FC_FreeFont);
@@ -123,10 +124,10 @@ int main() {
               game.multiplier);
 
       std::string commands_str = "";
-      commands_str += commands.contains(Command::THRUST_BACKWARD) ? "<" : " ";
-      commands_str += commands.contains(Command::THRUST_UP) ? "^" : " ";
-      commands_str += commands.contains(Command::THRUST_DOWN) ? "v" : " ";
-      commands_str += commands.contains(Command::THRUST_FORWARD) ? ">" : " ";
+      commands_str += commands.count(Command::THRUST_BACKWARD) ? "<" : " ";
+      commands_str += commands.count(Command::THRUST_UP) ? "^" : " ";
+      commands_str += commands.count(Command::THRUST_DOWN) ? "v" : " ";
+      commands_str += commands.count(Command::THRUST_FORWARD) ? ">" : " ";
       FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Commands: %s",
               commands_str.c_str());
 

@@ -30,10 +30,10 @@ Game::Game()
 }
 
 void Game::commands(const std::unordered_set<Command>& commands) {
-  if (commands.contains(Command::THRUST_UP)) {
+  if (commands.count(Command::THRUST_UP)) {
     ship.vy -= vertical_thrust;
     ship.vy = std::max(ship.vy, -vertical_thrust_max);
-  } else if (commands.contains(Command::THRUST_DOWN)) {
+  } else if (commands.count(Command::THRUST_DOWN)) {
     ship.vy += vertical_thrust;
     ship.vy = std::min(ship.vy, vertical_thrust_max);
   } else {
@@ -44,10 +44,10 @@ void Game::commands(const std::unordered_set<Command>& commands) {
     }
   }
 
-  if (commands.contains(Command::THRUST_BACKWARD)) {
+  if (commands.count(Command::THRUST_BACKWARD)) {
     ship.vx -= horizontal_thrust;
     ship.vx = std::max(ship.vx, -horizontal_thrust_max);
-  } else if (commands.contains(Command::THRUST_FORWARD)) {
+  } else if (commands.count(Command::THRUST_FORWARD)) {
     ship.vx += vertical_thrust;
     ship.vx = std::min(ship.vx, horizontal_thrust_max);
   } else {
@@ -58,14 +58,14 @@ void Game::commands(const std::unordered_set<Command>& commands) {
     }
   }
 
-  if (ship.cannon_cooldown == 0 && commands.contains(Command::FIRE)) {
+  if (ship.cannon_cooldown == 0 && commands.count(Command::FIRE)) {
     if (fired_forward) {
       cave.bullets.push_back({.x = ship.x,
                               .y = ship.y,
-                              .vx = sqrt(3.f) / 2.f,
+                              .vx = sqrtf(3.f) / 2.f,
                               .vy = 0.5f,
                               .nx = 0.5f,
-                              .ny = -sqrt(3.f) / 2.f,
+                              .ny = -sqrtf(3.f) / 2.f,
                               .damage = bullet_damage,
                               .dead = false});
     } else {
@@ -177,8 +177,8 @@ void Game::update(uint32_t dt) {
 
       float theta = d_angle(generator_);
       std::array<Point, 2> vertices = {
-          {{cos(theta - 0.1f) * 0.02f, sin(theta - 0.1f) * 0.02f},
-           {cos(theta + 0.1f) * 0.02f, sin(theta + 0.1f) * 0.02f}}};
+          {{cosf(theta - 0.1f) * 0.02f, sinf(theta - 0.1f) * 0.02f},
+           {cosf(theta + 0.1f) * 0.02f, sinf(theta + 0.1f) * 0.02f}}};
       cave.debris.push_back({
           .x = ship.x,
           .y = ship.y,
@@ -302,14 +302,14 @@ void Game::update(uint32_t dt) {
           float theta = d_angle(generator_);
           float size = fabs(d_angle(generator_)) * 0.01;
           std::array<Point, 2> vertices = {
-              {{cos(theta - 0.1f) * size, sin(theta - 0.1f) * size},
-               {cos(theta + 0.1f) * size, sin(theta + 0.1f) * size}}};
+              {{cosf(theta - 0.1f) * size, sinf(theta - 0.1f) * size},
+               {cosf(theta + 0.1f) * size, sinf(theta + 0.1f) * size}}};
           cave.debris.push_back({
               .x = ship.x,
               .y = ship.y,
               .am = 0.f,
-              .vx = sin(theta) * 0.2f,
-              .vy = cos(theta) * 0.2f,
+              .vx = static_cast<float>(sinf(theta) * 0.2f),
+              .vy = static_cast<float>(cosf(theta) * 0.2f),
               .shade = static_cast<int>(10000.f * size),
               .vertices = vertices,
           });

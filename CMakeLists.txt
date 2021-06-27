@@ -3,7 +3,7 @@ find_package(PkgConfig REQUIRED)
 
 project(HSS LANGUAGES C CXX)
 
-set(CMAKE_CXX_STANDARD 20)
+    set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_PREFIX_PATH "/usr/local/lib/pkgconfig")
@@ -16,7 +16,7 @@ elseif(UNIX)
     set(VENDOR_DIR "${CMAKE_SOURCE_DIR}/dep/ubuntu-18.04")
 endif()
 
-find_package(SDL2 REQUIRED)
+pkg_search_module(SDL2 REQUIRED sdl2)
 pkg_search_module(SDL2_TTF REQUIRED SDL2_ttf)
 pkg_search_module(SDL2_GFX REQUIRED SDL2_gfx)
 
