@@ -22,12 +22,16 @@ void Renderer::draw(const Game& game) {
     }
     drawBoulder(boulder, game.offsetx, game.offsety);
 
-    if (game.ship.x - 0.1 < x && x < game.ship.x + 0.1) {
-      drawBoulderOutline(boulder, game.offsetx, game.offsety, 0xffff0000);
+    if (game.debug) {
+      if (game.ship.x - 0.1 < x && x < game.ship.x + 0.1) {
+        drawBoulderOutline(boulder, game.offsetx, game.offsety, 0xffff0000);
+      }
     }
   }
 
-  drawEnvelope(game.cave.floor_envelope, game.offsetx, game.offsety);
+  if (game.debug) {
+    drawEnvelope(game.cave.floor_envelope, game.offsetx, game.offsety);
+  }
 
   for (auto& debris : game.cave.debris) {
     if (debris.dead) {
@@ -36,18 +40,21 @@ void Renderer::draw(const Game& game) {
     drawDebris(debris, game.offsetx, game.offsety);
   }
 
-  if (!game.collisions.empty()) {
-    Pixel bc = toPixel(game.ship.x - game.offsetx, game.ship.y - game.offsety);
-    circleColor(renderer_, bc.x, bc.y, game.ship.r * height_, 0xff00ffff);
-  }
-
-  for (auto& boulder : game.collisions) {
-    if (boulder.dead) {
-      continue;
+  if (game.debug) {
+    if (!game.collisions.empty()) {
+      Pixel bc =
+          toPixel(game.ship.x - game.offsetx, game.ship.y - game.offsety);
+      circleColor(renderer_, bc.x, bc.y, game.ship.r * height_, 0xff00ffff);
     }
-    drawBoulderOutline(boulder, game.offsetx, game.offsety, 0xffffffff);
-    Pixel bc = toPixel(boulder.x - game.offsetx, boulder.y - game.offsety);
-    circleColor(renderer_, bc.x, bc.y, boulder.r * height_, 0xff00ffff);
+
+    for (auto& boulder : game.collisions) {
+      if (boulder.dead) {
+        continue;
+      }
+      drawBoulderOutline(boulder, game.offsetx, game.offsety, 0xffffffff);
+      Pixel bc = toPixel(boulder.x - game.offsetx, boulder.y - game.offsety);
+      circleColor(renderer_, bc.x, bc.y, boulder.r * height_, 0xff00ffff);
+    }
   }
 
   for (auto& spider : game.cave.floor_spiders) {
@@ -56,7 +63,9 @@ void Renderer::draw(const Game& game) {
     }
     drawSpider(spider, game.offsetx, game.offsety);
   }
-  drawShip(game.ship, game.offsetx, game.offsety);
+  if (!game.gameover) {
+    drawShip(game.ship, game.offsetx, game.offsety);
+  }
 
   for (auto& bullet : game.cave.bullets) {
     if (!bullet.dead) {
@@ -71,7 +80,8 @@ void Renderer::draw(const Game& game) {
 }
 
 void Renderer::drawShip(const Ship& ship, float offsetx, float offsety) {
-  constexpr uint32_t hullcolor = 0xffb3b3b3;
+  uint32_t hullcolor = 0xffb3b3b3;
+  hullcolor += 0x00010101 * ship.damaged_cooldown;
   const float ship_size = ship.r * 4;
   {
     Pixel pc = toPixel(ship.x - offsetx + 0.053 * ship_size,

@@ -62,6 +62,10 @@ int main() {
           event.window.windowID == SDL_GetWindowID(window)) {
         done = true;
       }
+      if (event.type == SDL_KEYDOWN &&
+          event.key.keysym.scancode == SDL_SCANCODE_F1) {
+        game.debug = !game.debug;
+      }
     }
 
     // Clear screen
@@ -90,36 +94,39 @@ int main() {
 
     renderer.draw(game);
 
-    int stri = 0;
-    FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "FPS: %.1f",
-            1000.f / dt);
+    if (game.debug) {
+      int stri = 0;
+      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "FPS: %.1f",
+              1000.f / dt);
 
-    std::string commands_str = "";
-    commands_str += commands.contains(Command::THRUST_BACKWARD) ? "<" : " ";
-    commands_str += commands.contains(Command::THRUST_UP) ? "^" : " ";
-    commands_str += commands.contains(Command::THRUST_DOWN) ? "v" : " ";
-    commands_str += commands.contains(Command::THRUST_FORWARD) ? ">" : " ";
-    FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Commands: %s",
-            commands_str.c_str());
+      std::string commands_str = "";
+      commands_str += commands.contains(Command::THRUST_BACKWARD) ? "<" : " ";
+      commands_str += commands.contains(Command::THRUST_UP) ? "^" : " ";
+      commands_str += commands.contains(Command::THRUST_DOWN) ? "v" : " ";
+      commands_str += commands.contains(Command::THRUST_FORWARD) ? ">" : " ";
+      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Commands: %s",
+              commands_str.c_str());
 
-    FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Vertical Thrust: %f",
-            game.ship.vy);
+      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Vertical Thrust: %f",
+              game.ship.vy);
 
-    FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Boulders: %zu",
-            game.cave.boulders.size());
-    FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Bullets: %zu",
-            game.cave.bullets.size());
-    FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Spits: %zu",
-            game.cave.spits.size());
-    FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Debris: %zu",
-            game.cave.debris.size());
-    FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Floor spiders: %zu",
-            game.cave.floor_spiders.size());
+      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Boulders: %zu",
+              game.cave.boulders.size());
+      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Bullets: %zu",
+              game.cave.bullets.size());
+      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Spits: %zu",
+              game.cave.spits.size());
+      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Debris: %zu",
+              game.cave.debris.size());
+      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Floor spiders: %zu",
+              game.cave.floor_spiders.size());
 
-    FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Envelope points: %zu",
-            game.cave.floor_envelope.size());
-    FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Collisions: %zu",
-            game.collisions.size());
+      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Envelope points: %zu",
+              game.cave.floor_envelope.size());
+      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Collisions: %zu",
+              game.collisions.size());
+    }
+
     SDL_RenderPresent(sdl_renderer);
     ++frame;
   }

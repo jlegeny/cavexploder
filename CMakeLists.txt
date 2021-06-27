@@ -28,7 +28,7 @@ include_directories(fontcache ${SDL2_INCLUDE_DIRS} ${SDL2_TTF_INCLUDE_DIRS})
 
 # game stuff
 
-add_library(game game.h game.cpp cave.h cave.cpp)
+add_library(game game.h game.cpp cave.h cave.cpp util.h util.cpp)
 
 link_directories(${SDL2_GFX_LIBRARY_DIRS})
 add_executable(${PROJECT_NAME} main.cpp renderer.cpp renderer.h)

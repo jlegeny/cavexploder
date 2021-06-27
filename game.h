@@ -32,10 +32,15 @@ class Game
   Ship ship;
   std::vector<Boulder> collisions;
 
+  bool gameover = false;
+  bool debug = true;
+
  private:
   uint32_t time_;
   float speed_ = 0.5;  // u/ms
   float last_gen = 0;
+  int gameover_countdown = 2000;
+  float gameover_slowdown = 1.0;
 };
 
 #endif // GAME_H

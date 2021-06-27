@@ -1,5 +1,7 @@
 #include "game.h"
 
+#include "util.h"
+
 constexpr float vertical_thrust = 0.6;
 constexpr float vertical_thrust_max = 3.6;
 constexpr float vertical_deceleration = 0.3;
@@ -22,6 +24,7 @@ Game::Game()
   ship.x = 0.1;
   ship.y = 0.5;
   ship.r = 0.0125;
+  ship.health = 1000;
   last_gen = 1.8f;
   cave.generate(0.f, last_gen);
 }
@@ -74,10 +77,14 @@ void Game::checkCollisions() {
   collisions.clear();
   for (auto it = cave.boulders.lower_bound(ship.x - 0.1);
        it != cave.boulders.upper_bound(ship.x + 0.1); ++it) {
+    if (it->second.dead) {
+      continue;
+    }
     if ((ship.x - it->second.x) * (ship.x - it->second.x) +
             (ship.y - it->second.y) * (ship.y - it->second.y) <
         (ship.r + it->second.r) * (ship.r + it->second.r)) {
       collisions.push_back(it->second);
+      it->second.dead = true;
     }
   }
 
@@ -105,7 +112,7 @@ void Game::checkCollisions() {
 
 void Game::update(uint32_t dt) {
   const float dts = dt / 1000.f;
-  const float offset = dts * speed_;
+  const float offset = dts * speed_ * gameover_slowdown;
 
   ship.y += ship.vy * vertical_speed * dts;
   ship.x += ship.vx * horizontal_speed * dts;
@@ -121,7 +128,9 @@ void Game::update(uint32_t dt) {
     ship.cannon_cooldown = std::max<int32_t>(ship.cannon_cooldown - dt, 0);
   }
 
-  offsetx += offset;
+  if (!gameover) {
+    offsetx += offset;
+  }
 
   for (auto& bullet : cave.bullets) {
     bullet.x += bullet.vx * bullet_speed + offset;
@@ -136,6 +145,11 @@ void Game::update(uint32_t dt) {
     spit.y += spit.vy * dts;
     if (offsetx - 0.1 > spit.x || spit.x > offsetx + 1.8 || spit.y < 0) {
       spit.dead = true;
+    }
+    if (sqdist(spit.x, spit.y, ship.x, ship.y) < ship.r * ship.r) {
+      spit.dead = true;
+      ship.health -= spit.r * 2000;
+      ship.damaged_cooldown = 50;
     }
   }
 
@@ -235,4 +249,33 @@ void Game::update(uint32_t dt) {
   }
 
   checkCollisions();
+
+  for (auto& boulder : collisions) {
+    ship.health -= 1000 * boulder.r;
+    ship.damaged_cooldown = 100;
+    cave.explodeBoulder(boulder);
+  }
+
+  if (ship.damaged_cooldown > 0) {
+    ship.damaged_cooldown = std::max<int32_t>(ship.damaged_cooldown - dt, 0);
+    if (ship.health <= 0) {
+      gameover = true;
+    }
+  }
+
+  if (gameover) {
+    if (gameover_slowdown > 0) {
+      gameover_slowdown = std::max(gameover_slowdown - dts, 0.f);
+    }
+    if (gameover_countdown > 0) {
+      gameover_countdown = std::max<int>(gameover_countdown - dt, 0);
+    }
+    if (gameover_countdown == 0) {
+      for (auto& [x, boulder] : cave.boulders) {
+        boulder.dead = true;
+        cave.explodeBoulder(boulder);
+      }
+      gameover_countdown = -1;
+    }
+  }
 }

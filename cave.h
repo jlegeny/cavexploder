@@ -27,6 +27,8 @@ struct Ship {
   float vx, vy;
   float r;
   int32_t cannon_cooldown;
+  int health;
+  uint32_t damaged_cooldown;
 };
 
 struct Bullet {

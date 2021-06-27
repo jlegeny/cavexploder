@@ -1,14 +1,10 @@
 #include "cave.h"
 
+#include "util.h"
+
 constexpr int density = 80;
 constexpr float envelope_presicion = 1.f / 128.f;
 constexpr float spider_probability = 0.1;
-
-namespace {
-float sqdist(float ax, float ay, float bx, float by) {
-  return (ax - bx) * (ax - bx) + (ay - by) * (ay - by);
-}
-}  // namespace
 
 Cave::Cave(int seed)
     : generator_(seed) {}
