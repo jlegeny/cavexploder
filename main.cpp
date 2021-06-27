@@ -78,6 +78,9 @@ int main() {
       commands.insert(kbd_state[SDL_SCANCODE_RIGHT] ? Command::THRUST_FORWARD
                                                     : Command::THRUST_BACKWARD);
     }
+    if (kbd_state[SDL_SCANCODE_D]) {
+      commands.insert({Command::FIRE, Command::FIRE_4});
+    }
     game.commands(commands);
 
     uint32_t ticks = SDL_GetTicks();
@@ -87,23 +90,27 @@ int main() {
 
     renderer.draw(game);
 
-    FC_Draw(font.get(), sdl_renderer, 20, 20, "FPS: %.1f", 1000.f / dt);
+    int stri = 0;
+    FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "FPS: %.1f",
+            1000.f / dt);
 
     std::string commands_str = "";
     commands_str += commands.contains(Command::THRUST_BACKWARD) ? "<" : " ";
     commands_str += commands.contains(Command::THRUST_UP) ? "^" : " ";
     commands_str += commands.contains(Command::THRUST_DOWN) ? "v" : " ";
     commands_str += commands.contains(Command::THRUST_FORWARD) ? ">" : " ";
-    FC_Draw(font.get(), sdl_renderer, 20, 32, "Commands: %s",
+    FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Commands: %s",
             commands_str.c_str());
 
-    FC_Draw(font.get(), sdl_renderer, 20, 44, "Vertical Thrust: %f",
+    FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Vertical Thrust: %f",
             game.ship.vy);
 
-    FC_Draw(font.get(), sdl_renderer, 20, 56, "Boulders: %zu, %zu",
-            game.cave.ceiling.size(), game.cave.floor.size());
+    FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Boulders: %zu",
+            game.cave.boulders.size());
+    FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Bullets: %zu",
+            game.cave.bullets.size());
 
-    FC_Draw(font.get(), sdl_renderer, 20, 68, "Collisions: %zu",
+    FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Collisions: %zu",
             game.collisions.size());
     SDL_RenderPresent(sdl_renderer);
     ++frame;

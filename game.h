@@ -11,6 +11,8 @@ enum class Command {
   THRUST_DOWN,
   THRUST_FORWARD,
   THRUST_BACKWARD,
+  FIRE,
+  FIRE_4,
 };
 
 class Game
@@ -32,7 +34,7 @@ class Game
 
  private:
   uint32_t time_;
-  float speed_ = 0.0005 * 0;  // u/ms
+  float speed_ = 0.0005;  // u/ms
   float last_gen = 0;
 };
 

@@ -25,7 +25,7 @@ std::vector<Point> Cave::generateVertices(float radius) {
 void Cave::generate(float startx, float endx) {
   static std::uniform_real_distribution<float> d(0, 1);
   static std::uniform_int_distribution<int> d_shade(0, 47);
-  static std::uniform_real_distribution<float> d_radius(0.01, 0.1);
+  static std::uniform_real_distribution<float> d_radius(0.02, 0.1);
 
   for (int i = 0; i < static_cast<int>(density * (endx - startx)); ++i) {
     float x = startx + d(generator_) * (endx - startx);
@@ -38,8 +38,9 @@ void Cave::generate(float startx, float endx) {
                  .y = y,
                  .r = radius,
                  .shade = shade,
+                 .health = static_cast<int>(radius * 1000),
                  .vertices = generateVertices(radius)};
-    ceiling.emplace(x, p);
+    boulders.emplace(x, p);
   }
 
   for (int i = 0; i < static_cast<int>(density * (endx - startx)); ++i) {
@@ -53,7 +54,8 @@ void Cave::generate(float startx, float endx) {
                  .y = y,
                  .r = radius,
                  .shade = shade,
+                 .health = static_cast<int>(radius * 1000),
                  .vertices = generateVertices(radius)};
-    floor.emplace(x, p);
+    boulders.emplace(x, p);
   }
 }

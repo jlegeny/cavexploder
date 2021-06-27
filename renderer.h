@@ -23,6 +23,7 @@ class Renderer
 
  private:
   void drawShip(const Ship& ship, float offsetx, float offsety);
+  void drawBullet(const Bullet& bullet, float offsetx, float offsety);
   void drawBoulder(const Boulder& boulder, float offsetx, float offsety);
   void drawBoulderOutline(const Boulder& boulder, float offsetx, float offsety,
                           uint32_t color);
