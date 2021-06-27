@@ -122,6 +122,7 @@ void Game::checkCollisions() {
 }
 
 void Game::update(uint32_t dt) {
+  static std::uniform_real_distribution<float> d_angle(0, M_PI * 2);
   if (!started) {
     return;
   }
@@ -173,6 +174,20 @@ void Game::update(uint32_t dt) {
       spit.dead = true;
       ship.health -= spit.r * 2000;
       ship.damaged_cooldown = 50;
+
+      float theta = d_angle(generator_);
+      std::array<Point, 2> vertices = {
+          {{cos(theta - 0.1f) * 0.02f, sin(theta - 0.1f) * 0.02f},
+           {cos(theta + 0.1f) * 0.02f, sin(theta + 0.1f) * 0.02f}}};
+      cave.debris.push_back({
+          .x = ship.x,
+          .y = ship.y,
+          .am = 0.f,
+          .vx = spit.vx,
+          .vy = spit.vy,
+          .shade = 100,
+          .vertices = vertices,
+      });
     }
   }
 
@@ -282,6 +297,24 @@ void Game::update(uint32_t dt) {
   if (ship.damaged_cooldown > 0) {
     ship.damaged_cooldown = std::max<int32_t>(ship.damaged_cooldown - dt, 0);
     if (ship.health <= 0) {
+      if (!gameover) {
+        for (int j = 0; j < 50; ++j) {
+          float theta = d_angle(generator_);
+          float size = fabs(d_angle(generator_)) * 0.01;
+          std::array<Point, 2> vertices = {
+              {{cos(theta - 0.1f) * size, sin(theta - 0.1f) * size},
+               {cos(theta + 0.1f) * size, sin(theta + 0.1f) * size}}};
+          cave.debris.push_back({
+              .x = ship.x,
+              .y = ship.y,
+              .am = 0.f,
+              .vx = sin(theta) * 0.2f,
+              .vy = cos(theta) * 0.2f,
+              .shade = static_cast<int>(10000.f * size),
+              .vertices = vertices,
+          });
+        }
+      }
       gameover = true;
     }
     multiplier = std::max(multiplier - dts * 3, 1.f);

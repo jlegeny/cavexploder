@@ -44,6 +44,9 @@ class Game
   int gameover_countdown = 2000;
   float gameover_slowdown = 1.0;
   bool fired_forward = false;
+
+ private:
+  std::default_random_engine generator_;
 };
 
 #endif // GAME_H
