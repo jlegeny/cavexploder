@@ -12,6 +12,9 @@ constexpr float horizontal_speed = 0.2;
 
 constexpr float bullet_speed = 0.0223;
 constexpr float cannon_speed = 100;
+constexpr int bullet_damage = 100;
+
+constexpr float gravity = 2.91;
 
 Game::Game()
     : ship()
@@ -60,7 +63,7 @@ void Game::commands(const std::unordered_set<Command>& commands) {
                               .vy = 0.f,
                               .nx = 0.f,
                               .ny = 1.f,
-                              .damage = 4,
+                              .damage = bullet_damage,
                               .dead = false});
     }
     ship.cannon_cooldown = cannon_speed;
@@ -101,10 +104,11 @@ void Game::checkCollisions() {
 }
 
 void Game::update(uint32_t dt) {
-  const float offset = dt * speed_;
+  const float dts = dt / 1000.f;
+  const float offset = dts * speed_;
 
-  ship.y += ship.vy * vertical_speed * (dt / 1000.f);
-  ship.x += ship.vx * horizontal_speed * (dt / 1000.f);
+  ship.y += ship.vy * vertical_speed * dts;
+  ship.x += ship.vx * horizontal_speed * dts;
 
   ship.x += offset;
   if (last_gen - offsetx <= 2.0) {
@@ -127,8 +131,18 @@ void Game::update(uint32_t dt) {
     }
   }
 
+  for (auto& spit : cave.spits) {
+    spit.x += spit.vx * dts;
+    spit.y += spit.vy * dts;
+    if (offsetx - 0.1 > spit.x || spit.x > offsetx + 1.8 || spit.y < 0) {
+      spit.dead = true;
+    }
+  }
+
   cave.boulders.erase(cave.boulders.begin(),
                       cave.boulders.lower_bound(offsetx - 0.2));
+  cave.floor_envelope.erase(cave.floor_envelope.begin(),
+                            cave.floor_envelope.lower_bound(offsetx - 0.2));
 
   for (auto& [x, boulder] : cave.boulders) {
     if (boulder.damaged_cooldown > 0) {
@@ -136,12 +150,88 @@ void Game::update(uint32_t dt) {
           std::max<int32_t>(boulder.damaged_cooldown - dt, 0);
       if (boulder.health <= 0) {
         boulder.dead = true;
+        cave.explodeBoulder(boulder);
       }
     }
   }
 
+  for (auto& spider : cave.floor_spiders) {
+    if (spider.dead) {
+      continue;
+    }
+    if (spider.walking) {
+      spider.t += spider.speed * dts;
+      if (spider.t >= 1) {
+        auto it = cave.floor_envelope.find(spider.to);
+        if (spider.forward) {
+          it = std::prev(it);
+        } else {
+          it = std::next(it);
+        }
+        spider.from = spider.to;
+        spider.to = it->first;
+        spider.t = 0;
+      }
+
+      auto pfrom = cave.floor_envelope.find(spider.from);
+      auto pto = cave.floor_envelope.find(spider.to);
+
+      if (pfrom != cave.floor_envelope.end() &&
+          pto != cave.floor_envelope.end()) {
+        spider.x = (spider.to - spider.from) * spider.t + spider.from;
+        spider.y = (pto->second - pfrom->second) * spider.t + pfrom->second;
+      }
+
+    } else {
+      spider.x += spider.vx * dts;
+      spider.y += spider.vy * dts;
+      spider.vy += gravity * dts;
+    }
+
+    if (spider.cooldown == 0) {
+      cave.spiderSpit(spider, ship);
+      spider.burst += 1;
+      if (spider.burst >= spider.burst_rate) {
+        spider.cooldown = spider.fire_rate;
+        spider.burst = 0;
+      } else {
+        spider.cooldown = spider.burst_fire_rate;
+      }
+    } else {
+      if (spider.cooldown > 0) {
+        spider.cooldown = std::max(spider.cooldown - dts, 0.f);
+      }
+    }
+
+    if (spider.x < offsetx - 0.1 || spider.y > 1) {
+      spider.dead = true;
+    }
+  }
+
+  for (auto& debris : cave.debris) {
+    if (debris.dead) {
+      continue;
+    }
+    debris.x += (debris.vx) * dts;
+    debris.y += (debris.vy) * dts;
+    debris.vy += gravity * dts;
+
+    if (debris.x < offsetx - 0.1 || debris.y > 1.1 || debris.y < -0.1) {
+      debris.dead = true;
+    }
+  }
+
+  while (!cave.floor_spiders.empty() && cave.floor_spiders.front().dead) {
+    cave.floor_spiders.pop_front();
+  }
   while (!cave.bullets.empty() && cave.bullets.front().dead) {
     cave.bullets.pop_front();
+  }
+  while (!cave.spits.empty() && cave.spits.front().dead) {
+    cave.spits.pop_front();
+  }
+  while (!cave.debris.empty() && cave.debris.front().dead) {
+    cave.debris.pop_front();
   }
 
   checkCollisions();

@@ -23,7 +23,7 @@ int main() {
   SDL_Window* window = SDL_CreateWindow(
       "Cave Horizotal Scrolling Shooter", SDL_WINDOWPOS_CENTERED,
       SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT,
-      SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+      /*SDL_WINDOW_RESIZABLE |*/ SDL_WINDOW_ALLOW_HIGHDPI);
   if (window == NULL) {
     printf("Error creating window: %s\n", SDL_GetError());
     return -2;
@@ -109,7 +109,15 @@ int main() {
             game.cave.boulders.size());
     FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Bullets: %zu",
             game.cave.bullets.size());
+    FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Spits: %zu",
+            game.cave.spits.size());
+    FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Debris: %zu",
+            game.cave.debris.size());
+    FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Floor spiders: %zu",
+            game.cave.floor_spiders.size());
 
+    FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Envelope points: %zu",
+            game.cave.floor_envelope.size());
     FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Collisions: %zu",
             game.collisions.size());
     SDL_RenderPresent(sdl_renderer);

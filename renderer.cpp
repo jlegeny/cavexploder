@@ -27,6 +27,15 @@ void Renderer::draw(const Game& game) {
     }
   }
 
+  drawEnvelope(game.cave.floor_envelope, game.offsetx, game.offsety);
+
+  for (auto& debris : game.cave.debris) {
+    if (debris.dead) {
+      continue;
+    }
+    drawDebris(debris, game.offsetx, game.offsety);
+  }
+
   if (!game.collisions.empty()) {
     Pixel bc = toPixel(game.ship.x - game.offsetx, game.ship.y - game.offsety);
     circleColor(renderer_, bc.x, bc.y, game.ship.r * height_, 0xff00ffff);
@@ -40,11 +49,23 @@ void Renderer::draw(const Game& game) {
     Pixel bc = toPixel(boulder.x - game.offsetx, boulder.y - game.offsety);
     circleColor(renderer_, bc.x, bc.y, boulder.r * height_, 0xff00ffff);
   }
+
+  for (auto& spider : game.cave.floor_spiders) {
+    if (spider.dead) {
+      continue;
+    }
+    drawSpider(spider, game.offsetx, game.offsety);
+  }
   drawShip(game.ship, game.offsetx, game.offsety);
 
   for (auto& bullet : game.cave.bullets) {
     if (!bullet.dead) {
       drawBullet(bullet, game.offsetx, game.offsety);
+    }
+  }
+  for (auto& spit : game.cave.spits) {
+    if (!spit.dead) {
+      drawSpit(spit, game.offsetx, game.offsety);
     }
   }
 }
@@ -104,6 +125,16 @@ void Renderer::drawBullet(const Bullet& bullet, float offsetx, float offsety) {
                     bullet_color);
 }
 
+void Renderer::drawDebris(const Debris& debris, float offsetx, float offsety) {
+  Pixel pa = toPixel(debris.x + debris.vertices[0].x - offsetx,
+                     debris.y + debris.vertices[0].y - offsety);
+  Pixel pb = toPixel(debris.x + debris.vertices[1].x - offsetx,
+                     debris.y + debris.vertices[1].y - offsety);
+  Pixel pc = toPixel(debris.x - offsetx, debris.y - offsety);
+  filledTrigonRGBA(renderer_, pa.x, pa.y, pb.x, pb.y, pc.x, pc.y,
+                   15 + debris.shade, 10 + debris.shade, debris.shade, 255);
+}
+
 void Renderer::drawBoulder(const Boulder& boulder, float offsetx,
                            float offsety) {
   for (size_t i = 0; i < boulder.vertices.size(); ++i) {
@@ -133,5 +164,38 @@ void Renderer::drawBoulderOutline(const Boulder& boulder, float offsetx,
     Pixel pc = toPixel(boulder.x - offsetx, boulder.y - offsety);
 
     trigonColor(renderer_, pa.x, pa.y, pb.x, pb.y, pc.x, pc.y, color);
+  }
+}
+
+void Renderer::drawSpider(const Spider& spider, float offsetx, float offsety) {
+  constexpr uint32_t spidercolor = 0xffb3b3b3;
+
+  Pixel pc = toPixel(spider.x - offsetx, spider.y - offsety);
+  filledCircleColor(renderer_, pc.x, pc.y, spider.r * height_, spidercolor);
+}
+
+void Renderer::drawSpit(const Spit& spit, float offsetx, float offsety) {
+  constexpr uint32_t spitcolor = 0xc00000ff;
+
+  Pixel pc = toPixel(spit.x - offsetx, spit.y - offsety);
+  filledCircleColor(renderer_, pc.x, pc.y, spit.r * height_, spitcolor);
+}
+
+void Renderer::drawEnvelope(const std::map<float, float>& envelope,
+                            float offsetx, float offsety) {
+  if (envelope.size() < 2) {
+    return;
+  }
+  float lx = envelope.begin()->first;
+  float ly = envelope.begin()->second;
+  auto it = std::next(envelope.begin());
+  for (; it != envelope.end(); ++it) {
+    float x = it->first;
+    float y = it->second;
+    Pixel pa = toPixel(lx - offsetx, ly - offsety);
+    Pixel pb = toPixel(x - offsetx, y - offsety);
+    lineColor(renderer_, pa.x, pa.y, pb.x, pb.y, 0xff0000ff);
+    lx = x;
+    ly = y;
   }
 }

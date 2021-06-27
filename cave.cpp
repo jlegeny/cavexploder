@@ -1,6 +1,14 @@
 #include "cave.h"
 
 constexpr int density = 80;
+constexpr float envelope_presicion = 1.f / 128.f;
+constexpr float spider_probability = 0.1;
+
+namespace {
+float sqdist(float ax, float ay, float bx, float by) {
+  return (ax - bx) * (ax - bx) + (ay - by) * (ay - by);
+}
+}  // namespace
 
 Cave::Cave(int seed)
     : generator_(seed) {}
@@ -22,10 +30,71 @@ std::vector<Point> Cave::generateVertices(float radius) {
   return vertices;
 }
 
+void Cave::explodeBoulder(const Boulder &boulder) {
+  static std::uniform_real_distribution<float> d_angle(-M_PI / 2, M_PI);
+  static std::uniform_real_distribution<float> d_ejection_angle(
+      M_PI / 4 + M_PI / 2, M_PI * 2 / 3 + M_PI / 2);
+
+  for (size_t i = 0; i < boulder.vertices.size(); ++i) {
+    size_t a = i % boulder.vertices.size();
+    size_t b = (i + 1) % boulder.vertices.size();
+    float theta = d_angle(generator_);
+    std::array<Point, 2> vertices = {
+        {{boulder.vertices[a].x, boulder.vertices[a].y},
+         {boulder.vertices[b].x, boulder.vertices[b].y}}};
+    debris.push_back({.x = boulder.x,
+                      .y = boulder.y,
+                      .am = 0.f,
+                      .vx = sin(theta),
+                      .vy = cos(theta),
+                      .shade = boulder.shade,
+                      .vertices = vertices});
+  }
+
+  for (auto &spider : floor_spiders) {
+    float theta = d_ejection_angle(generator_);
+    if (sqdist(spider.x, spider.y, boulder.x, boulder.y) <
+        boulder.r * boulder.r * 1.4) {
+      spider.walking = false;
+      spider.vx = sin(theta);
+      spider.vy = cos(theta);
+    }
+  }
+}
+
+void Cave::spiderSpit(const Spider &spider, const Ship &ship) {
+  static std::uniform_real_distribution<float> d_r(0.004, 0.007);
+  float ship_speed = 0.5;
+
+  float vx =
+      (ship.x + ship_speed / spider.spit_speed - spider.x) * spider.spit_speed;
+  float vy = (ship.y - spider.y) * spider.spit_speed;
+
+  spits.push_back({
+      .x = spider.x,
+      .y = spider.y,
+      .vx = vx,
+      .vy = vy,
+      .r = d_r(generator_),
+  });
+}
+
+float envelopeRound(float f) {
+  int n = f / envelope_presicion;
+  return n * envelope_presicion;
+}
+
 void Cave::generate(float startx, float endx) {
   static std::uniform_real_distribution<float> d(0, 1);
   static std::uniform_int_distribution<int> d_shade(0, 47);
   static std::uniform_real_distribution<float> d_radius(0.02, 0.1);
+  static std::uniform_real_distribution<float> d_spider_r(0.008, 0.012);
+  static std::uniform_real_distribution<float> d_spider_speed(0.75, 1.5);
+  static std::uniform_int_distribution<int> d_spider_burst_rate(1, 5);
+  static std::uniform_real_distribution<float> d_spider_fire_rate(0.5, 1.5);
+  static std::uniform_real_distribution<float> d_spider_burst_fire_rate(0.1,
+                                                                        0.2);
+  static std::uniform_real_distribution<float> d_spider_spit_speed(1., 2.);
 
   for (int i = 0; i < static_cast<int>(density * (endx - startx)); ++i) {
     float x = startx + d(generator_) * (endx - startx);
@@ -43,12 +112,46 @@ void Cave::generate(float startx, float endx) {
     boulders.emplace(x, p);
   }
 
+  // floor
   for (int i = 0; i < static_cast<int>(density * (endx - startx)); ++i) {
     float x = startx + d(generator_) * (endx - startx);
     float y = d(generator_) * -fabs(cos(x) + sin(3 * x)) * 0.3 + 1.05;
 
     float radius = d_radius(generator_);
     int shade = d_shade(generator_);
+
+    float lx = -radius;
+    while (lx < radius) {
+      float ex = envelopeRound(x + lx);
+      float coslx = (lx / radius);
+      float ley = y - sqrt(1 - coslx * coslx) * radius;
+      lx += envelope_presicion;
+      if (!floor_envelope.count(ex) || floor_envelope[ex] > ley) {
+        floor_envelope[ex] = ley;
+      }
+      if (d(generator_) < spider_probability * envelope_presicion) {
+        float spider_r = d_spider_r(generator_);
+        float spider_speed = d_spider_speed(generator_);
+        floor_spiders.push_back({
+            .x = ex,
+            .y = floor_envelope[ex],
+            .walking = true,
+            .from = ex,
+            .to = ex - envelope_presicion,
+            .t = 0,
+            .r = spider_r,
+            .speed = spider_speed,
+            .health = 10,
+            .forward = true,
+            .burst_rate = d_spider_burst_rate(generator_),
+            .burst = 0,
+            .cooldown = 0.f,
+            .fire_rate = d_spider_fire_rate(generator_),
+            .burst_fire_rate = d_spider_burst_fire_rate(generator_),
+            .spit_speed = d_spider_spit_speed(generator_),
+        });
+      }
+    }
 
     Boulder p = {.x = x,
                  .y = y,

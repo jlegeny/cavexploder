@@ -34,7 +34,7 @@ class Game
 
  private:
   uint32_t time_;
-  float speed_ = 0.0005;  // u/ms
+  float speed_ = 0.5;  // u/ms
   float last_gen = 0;
 };
 

@@ -24,9 +24,14 @@ class Renderer
  private:
   void drawShip(const Ship& ship, float offsetx, float offsety);
   void drawBullet(const Bullet& bullet, float offsetx, float offsety);
+  void drawDebris(const Debris& debris, float offsetx, float offsety);
   void drawBoulder(const Boulder& boulder, float offsetx, float offsety);
   void drawBoulderOutline(const Boulder& boulder, float offsetx, float offsety,
                           uint32_t color);
+  void drawSpider(const Spider& spider, float offsetx, float offsety);
+  void drawSpit(const Spit& spit, float offsetx, float offsety);
+  void drawEnvelope(const std::map<float, float>& envelope, float offsetx,
+                    float offsety);
 
  private:
   SDL_Renderer* renderer_;
