@@ -39,13 +39,14 @@ void Cave::explodeBoulder(const Boulder &boulder) {
     std::array<Point, 2> vertices = {
         {{boulder.vertices[a].x, boulder.vertices[a].y},
          {boulder.vertices[b].x, boulder.vertices[b].y}}};
-    debris.push_back({.x = boulder.x,
+    Debris d = {.x = boulder.x,
                       .y = boulder.y,
                       .am = 0.f,
                       .vx = sinf(theta),
                       .vy = cosf(theta),
                       .shade = boulder.shade,
-                      .vertices = vertices});
+                      .vertices = vertices};
+    debris.push_back(d);
   }
 
   for (auto &spider : floor_spiders) {

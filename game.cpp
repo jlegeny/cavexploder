@@ -179,7 +179,7 @@ void Game::update(uint32_t dt) {
       std::array<Point, 2> vertices = {
           {{cosf(theta - 0.1f) * 0.02f, sinf(theta - 0.1f) * 0.02f},
            {cosf(theta + 0.1f) * 0.02f, sinf(theta + 0.1f) * 0.02f}}};
-      cave.debris.push_back({
+      Debris d = {
           .x = ship.x,
           .y = ship.y,
           .am = 0.f,
@@ -187,7 +187,8 @@ void Game::update(uint32_t dt) {
           .vy = spit.vy,
           .shade = 100,
           .vertices = vertices,
-      });
+      };
+      cave.debris.push_back(d);
     }
   }
 
@@ -304,7 +305,7 @@ void Game::update(uint32_t dt) {
           std::array<Point, 2> vertices = {
               {{cosf(theta - 0.1f) * size, sinf(theta - 0.1f) * size},
                {cosf(theta + 0.1f) * size, sinf(theta + 0.1f) * size}}};
-          cave.debris.push_back({
+          Debris d = {
               .x = ship.x,
               .y = ship.y,
               .am = 0.f,
@@ -312,7 +313,8 @@ void Game::update(uint32_t dt) {
               .vy = static_cast<float>(cosf(theta) * 0.2f),
               .shade = static_cast<int>(10000.f * size),
               .vertices = vertices,
-          });
+          };
+          cave.debris.push_back(d);
         }
       }
       gameover = true;

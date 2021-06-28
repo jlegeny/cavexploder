@@ -1,7 +1,10 @@
 #include "renderer.h"
 
+#include "util.h"
+
 #include <SDL2_gfxPrimitives.h>
 
+#include <cmath>
 #include <iostream>
 
 Renderer::Renderer(SDL_Renderer* renderer, int width, int height, float unit)
