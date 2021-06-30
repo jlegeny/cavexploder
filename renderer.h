@@ -1,8 +1,7 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
-#include <SDL.h>
-
+#include <array>
 #include <cstdint>
 
 #include "cave.h"
@@ -15,7 +14,8 @@ struct Pixel {
 class Renderer
 {
  public:
-  Renderer(SDL_Renderer* renderer, int width, int height, float unit);
+  Renderer(int width, int height);
+  void reset(int width, int height);
 
   void draw(const Game& game);
 
@@ -27,17 +27,15 @@ class Renderer
   void drawDebris(const Debris& debris, float offsetx, float offsety);
   void drawBoulder(const Boulder& boulder, float offsetx, float offsety);
   void drawBoulderOutline(const Boulder& boulder, float offsetx, float offsety,
-                          uint32_t color);
+                          std::array<uint8_t, 3> color);
   void drawSpider(const Spider& spider, float offsetx, float offsety);
   void drawSpit(const Spit& spit, float offsetx, float offsety);
   void drawEnvelope(const std::map<float, float>& envelope, float offsetx,
                     float offsety);
 
  private:
-  SDL_Renderer* renderer_;
-  const int width_;
-  const int height_;
-  const int unit_;
+  int width_;
+  int height_;
 };
 
 #endif // RENDERER_H

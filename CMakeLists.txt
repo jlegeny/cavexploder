@@ -18,48 +18,38 @@ set(CMAKE_PREFIX_PATH "/usr/local/lib/pkgconfig")
 
 find_package(PkgConfig REQUIRED)
 
-pkg_search_module(SDL2 REQUIRED sdl2)
-pkg_search_module(SDL2_TTF REQUIRED SDL2_ttf)
 
-if(MINGW)
-  add_definitions(-DSDL_MAIN_HANDLED)
+if(APPLE)
+  pkg_search_module(ALLEGRO REQUIRED allegro_main-5)
+else()
+  pkg_search_module(ALLEGRO REQUIRED allegro-5)
 endif()
 
-# SDL2 FontCache
-
-add_library(fontcache STATIC
-    "${CMAKE_SOURCE_DIR}/dep/src/SDL2_FontCache/src/SDL_FontCache.c"
-    )
-include_directories(fontcache
-    ${SDL2_INCLUDE_DIRS}
-    ${SDL2_TTF_INCLUDE_DIRS}
-    "${CMAKE_SOURCE_DIR}/dep/src/SDL2_FontCache/include")
-
-# SDL2 GFX
-
-add_library(sdl2_gfx STATIC
-    "${CMAKE_SOURCE_DIR}/dep/src/SDL2_gfx/src/SDL2_framerate.c"
-    "${CMAKE_SOURCE_DIR}/dep/src/SDL2_gfx/src/SDL2_gfxPrimitives.c"
-    "${CMAKE_SOURCE_DIR}/dep/src/SDL2_gfx/src/SDL2_imageFilter.c"
-    "${CMAKE_SOURCE_DIR}/dep/src/SDL2_gfx/src/SDL2_rotozoom.c")
-include_directories(sdl2_gfx
-    ${SDL2_INCLUDE_DIRS}
-    "${CMAKE_SOURCE_DIR}/dep/src/SDL2_gfx/include")
+pkg_search_module(ALLEGRO_FONT REQUIRED allegro_font-5)
+pkg_search_module(ALLEGRO_PRIMITIVES REQUIRED allegro_primitives-5)
+pkg_search_module(ALLEGRO_TTF REQUIRED allegro_ttf-5)
 
 # game stuff
 
 add_library(game game.h game.cpp cave.h cave.cpp util.h util.cpp)
 
-link_directories(${SDL2_LIBRARY_DIRS})
-link_directories(${SDL2_TTF_LIBRARY_DIRS})
+link_directories(${ALLEGRO_LIBRARY_DIRS})
 
-add_executable(${PROJECT_NAME} main.cpp renderer.cpp renderer.h)
+add_executable(${PROJECT_NAME}
+    main.cpp
+    renderer.cpp
+    renderer.h
+    )
 
 include_directories(${PROJECT_NAME}
-    ${SDL2_INCLUDE_DIRS}
-    ${SDL2_TTF_INCLUDE_DIRS}
-    "${CMAKE_SOURCE_DIR}/dep/src/SDL2_FontCache/include"
-    "${CMAKE_SOURCE_DIR}/dep/src/SDL2_gfx/include")
+    ${ALLEGRO_INCLUDE_DIRS}
+    )
 
-target_link_libraries(${PROJECT_NAME} game sdl2_gfx fontcache ${SDL2_TTF_LIBRARIES} ${SDL2_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}
+    game
+    ${ALLEGRO_TTF_LIBRARIES}
+    ${ALLEGRO_PRIMITIVES_LIBRARIES}
+    ${ALLEGRO_FONT_LIBRARIES}
+    ${ALLEGRO_LIBRARIES}
+    )
 

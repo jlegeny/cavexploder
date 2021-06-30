@@ -1,5 +1,8 @@
-#include <SDL.h>
-#include <SDL_FontCache.h>
+#define ALLEGRO_NO_MAGIC_MAIN
+#include <allegro5/allegro5.h>
+#include <allegro5/allegro_font.h>
+#include <allegro5/allegro_primitives.h>
+#include <allegro5/allegro_ttf.h>
 
 #include <iostream>
 #include <memory>
@@ -10,175 +13,192 @@
 
 constexpr int WINDOW_WIDTH = 1280;
 constexpr int WINDOW_HEIGHT = 720;
-constexpr float UNIT = 10;
 
-int main() {
-  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) !=
-      0) {
-    printf("Error: %s\n", SDL_GetError());
-    return -1;
-  }
+int real_main(int argc, char** argv) {
+  al_init();
+  al_install_keyboard();
 
-  SDL_SetHint(SDL_HINT_RENDER_DRIVER, "metal");
+  ALLEGRO_TIMER* timer = al_create_timer(1.0 / 60.0);
+  ALLEGRO_EVENT_QUEUE* queue = al_create_event_queue();
 
-  SDL_Window* window = SDL_CreateWindow(
-      "Cave Horizotal Scrolling Shooter", SDL_WINDOWPOS_CENTERED,
-      SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0
-      /*SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI*/);
-  if (window == NULL) {
-    printf("Error creating window: %s\n", SDL_GetError());
-    return -2;
-  }
+  al_set_new_display_flags(ALLEGRO_RESIZABLE);
+  ALLEGRO_DISPLAY* display = al_create_display(WINDOW_WIDTH, WINDOW_HEIGHT);
 
-  SDL_Renderer* sdl_renderer = SDL_CreateRenderer(
-      window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-  if (sdl_renderer == NULL) {
-    printf("Error creating renderer: %s\n", SDL_GetError());
-    return -3;
-  }
-  SDL_RenderSetScale(sdl_renderer, 1, 1);
+  al_register_event_source(queue, al_get_keyboard_event_source());
+  al_register_event_source(queue, al_get_display_event_source(display));
 
-  std::unique_ptr<FC_Font, void (*)(FC_Font*)> font(FC_CreateFont(),
-                                                    FC_FreeFont);
-  std::unique_ptr<FC_Font, void (*)(FC_Font*)> bigfont(FC_CreateFont(),
-                                                       FC_FreeFont);
-  FC_LoadFont(font.get(), sdl_renderer, "IBMPlexMono-Medium.ttf", 10,
-              FC_MakeColor(0, 255, 0, 255), TTF_STYLE_NORMAL);
-  FC_LoadFont(bigfont.get(), sdl_renderer, "IBMPlexMono-Medium.ttf", 30,
-              FC_MakeColor(0, 255, 0, 255), TTF_STYLE_NORMAL);
+  al_register_event_source(queue, al_get_timer_event_source(timer));
+
+  al_init_primitives_addon();
+  al_init_ttf_addon();
+
+  ALLEGRO_FONT* font = al_load_ttf_font("IBMPlexMono-Medium.ttf", 18, 0);
+  ALLEGRO_FONT* big_font = al_load_ttf_font("IBMPlexMono-Medium.ttf", 30, 0);
 
   Game game;
-  Renderer renderer(sdl_renderer, WINDOW_WIDTH, WINDOW_HEIGHT, UNIT);
+  Renderer renderer(WINDOW_WIDTH, WINDOW_HEIGHT);
 
-  uint32_t last_ticks = SDL_GetTicks();
+  uint32_t last_ticks = al_get_time() * 1000;
   std::unordered_set<Command> commands;
 
+  ALLEGRO_COLOR text_color = al_map_rgb(0, 255, 0);
+  ALLEGRO_EVENT event;
+  ALLEGRO_KEYBOARD_STATE ks;
+
+  char strbuff[200];
+  bool redraw = true;
   int frame = 0;
+
+  al_start_timer(timer);
 
   bool done = false;
   while (!done) {
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-      if (event.type == SDL_QUIT) {
-        done = true;
+    al_wait_for_event(queue, &event);
+
+    if (event.type == ALLEGRO_EVENT_DISPLAY_RESIZE) {
+      int width = al_get_display_width(display);
+      int height = width * 720. / 1280.;
+      al_resize_display(display, width, height);
+      al_acknowledge_resize(display);
+      renderer.reset(width, height);
+    } else if (event.type == ALLEGRO_EVENT_TIMER) {
+      redraw = true;
+    } else if (event.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
+      done = true;
+    } else if (event.type == ALLEGRO_EVENT_KEY_DOWN) {
+      if (event.keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
+        game.ship.health = 0;
       }
-      if (event.type == SDL_WINDOWEVENT &&
-          event.window.event == SDL_WINDOWEVENT_CLOSE &&
-          event.window.windowID == SDL_GetWindowID(window)) {
-        done = true;
+      if (event.keyboard.keycode == ALLEGRO_KEY_F1) {
+        game.debug = !game.debug;
       }
-      if (event.type == SDL_KEYDOWN) {
-        if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
-          game.ship.health = 0;
-        }
-        if (event.key.keysym.scancode == SDL_SCANCODE_F1) {
-          game.debug = !game.debug;
-        }
-        if (!game.started && event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
-          game.started = true;
-        }
+      if (!game.started && event.keyboard.keycode == ALLEGRO_KEY_SPACE) {
+        game.started = true;
       }
     }
 
-    // Clear screen
-    SDL_SetRenderDrawColor(sdl_renderer, 0x03, 0x03, 0x03, 0xFF);
-    SDL_RenderClear(sdl_renderer);
+    al_get_keyboard_state(&ks);
 
     commands.clear();
-    const Uint8* kbd_state = SDL_GetKeyboardState(NULL);
-    if (kbd_state[SDL_SCANCODE_UP] ^ kbd_state[SDL_SCANCODE_DOWN] ^
-        kbd_state[SDL_SCANCODE_W] ^ kbd_state[SDL_SCANCODE_S]) {
-      commands.insert(kbd_state[SDL_SCANCODE_UP] || kbd_state[SDL_SCANCODE_W]
+
+    if (al_key_down(&ks, ALLEGRO_KEY_UP) ^ al_key_down(&ks, ALLEGRO_KEY_DOWN) ^
+        al_key_down(&ks, ALLEGRO_KEY_W) ^ al_key_down(&ks, ALLEGRO_KEY_S)) {
+      commands.insert(al_key_down(&ks, ALLEGRO_KEY_UP) ||
+                              al_key_down(&ks, ALLEGRO_KEY_W)
                           ? Command::THRUST_UP
                           : Command::THRUST_DOWN);
     }
-    if (kbd_state[SDL_SCANCODE_RIGHT] ^ kbd_state[SDL_SCANCODE_LEFT] ^
-        kbd_state[SDL_SCANCODE_A] ^ kbd_state[SDL_SCANCODE_D]) {
-      commands.insert(kbd_state[SDL_SCANCODE_RIGHT] || kbd_state[SDL_SCANCODE_D]
+    if (al_key_down(&ks, ALLEGRO_KEY_RIGHT) ^
+        al_key_down(&ks, ALLEGRO_KEY_LEFT) ^ al_key_down(&ks, ALLEGRO_KEY_A) ^
+        al_key_down(&ks, ALLEGRO_KEY_D)) {
+      commands.insert(al_key_down(&ks, ALLEGRO_KEY_RIGHT) ||
+                              al_key_down(&ks, ALLEGRO_KEY_D)
                           ? Command::THRUST_FORWARD
                           : Command::THRUST_BACKWARD);
     }
-    if (kbd_state[SDL_SCANCODE_SPACE]) {
+    if (al_key_down(&ks, ALLEGRO_KEY_SPACE)) {
       commands.insert({Command::FIRE});
     }
     if (!game.gameover) {
       game.commands(commands);
     }
 
-    uint32_t ticks = SDL_GetTicks();
+    uint32_t ticks = al_get_time() * 1000;
     uint32_t dt = ticks - last_ticks;
     game.update(dt);
     last_ticks = ticks;
 
-    renderer.draw(game);
+    if (redraw && al_is_event_queue_empty(queue)) {
+      al_clear_to_color(al_map_rgb(0, 0, 0));
+      renderer.draw(game);
+      if (!game.started) {
+        int line = 0;
+        al_draw_text(big_font, text_color, 400, 150 + ++line * 30, 0,
+                     "           Welcome!");
+        ++line;
+        al_draw_text(big_font, text_color, 400, 150 + ++line * 30, 0,
+                     "  ASDF or Arrow Keys to move");
+        al_draw_text(big_font, text_color, 400, 150 + ++line * 30, 0,
+                     "        Space to fire");
+        al_draw_text(big_font, text_color, 400, 150 + ++line * 30, 0,
+                     "      Escape to give up");
+        ++line;
+        al_draw_text(big_font, text_color, 400, 150 + ++line * 30, 0,
+                     "Press Space to start the game.");
+        ++line;
+        al_draw_text(big_font, text_color, 400, 150 + ++line * 30, 0,
+                     "          Good Luck");
+      }
+      if (game.gameover && game.cave.boulders.empty() &&
+          game.cave.debris.empty()) {
+        al_draw_text(big_font, text_color, 550, 250, 0, "Game Over");
+        snprintf(strbuff, sizeof(strbuff), "Final Score: %lld", game.score);
+        al_draw_text(big_font, text_color, 550, 310, 0, strbuff);
+      }
 
-    if (game.debug) {
-      int stri = 0;
-      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Score: %d",
-              game.score);
-      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "FPS: %.1f",
-              1000.f / dt);
-      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "HP: %d",
-              game.ship.health);
-      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Multiplier: %.3f",
-              game.multiplier);
+      if (game.debug) {
+        const int fontsize = 18;
+        int stri = 0;
+        snprintf(strbuff, sizeof(strbuff), "Score: %lld", game.score);
+        al_draw_text(font, text_color, 20, ++stri * fontsize, 0, strbuff);
+        // snprintf(strbuff, sizeof(strbuff), "FPS: %.1f", 1000.f / dt);
+        snprintf(strbuff, sizeof(strbuff), "HP: %d", game.ship.health);
+        al_draw_text(font, text_color, 20, ++stri * fontsize, 0, strbuff);
+        snprintf(strbuff, sizeof(strbuff), "Multiplier: %.3f", game.multiplier);
+        al_draw_text(font, text_color, 20, ++stri * fontsize, 0, strbuff);
 
-      std::string commands_str = "";
-      commands_str += commands.count(Command::THRUST_BACKWARD) ? "<" : " ";
-      commands_str += commands.count(Command::THRUST_UP) ? "^" : " ";
-      commands_str += commands.count(Command::THRUST_DOWN) ? "v" : " ";
-      commands_str += commands.count(Command::THRUST_FORWARD) ? ">" : " ";
-      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Commands: %s",
-              commands_str.c_str());
+        std::string commands_str = "";
+        commands_str += commands.count(Command::THRUST_BACKWARD) ? "<" : " ";
+        commands_str += commands.count(Command::THRUST_UP) ? "^" : " ";
+        commands_str += commands.count(Command::THRUST_DOWN) ? "v" : " ";
+        commands_str += commands.count(Command::THRUST_FORWARD) ? ">" : " ";
+        snprintf(strbuff, sizeof(strbuff), "Commands: %s",
+                 commands_str.c_str());
+        al_draw_text(font, text_color, 20, ++stri * fontsize, 0, strbuff);
 
-      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Vertical Thrust: %f",
-              game.ship.vy);
+        snprintf(strbuff, sizeof(strbuff), "Vertical Thrust: %f", game.ship.vy);
+        al_draw_text(font, text_color, 20, ++stri * fontsize, 0, strbuff);
 
-      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Boulders: %zu",
-              game.cave.boulders.size());
-      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Bullets: %zu",
-              game.cave.bullets.size());
-      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Spits: %zu",
-              game.cave.spits.size());
-      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Debris: %zu",
-              game.cave.debris.size());
-      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Floor spiders: %zu",
-              game.cave.floor_spiders.size());
+        snprintf(strbuff, sizeof(strbuff), "Boulders: %zu",
+                 game.cave.boulders.size());
+        al_draw_text(font, text_color, 20, ++stri * fontsize, 0, strbuff);
+        snprintf(strbuff, sizeof(strbuff), "Bullets: %zu",
+                 game.cave.bullets.size());
+        al_draw_text(font, text_color, 20, ++stri * fontsize, 0, strbuff);
+        snprintf(strbuff, sizeof(strbuff), "Spits: %zu",
+                 game.cave.spits.size());
+        al_draw_text(font, text_color, 20, ++stri * fontsize, 0, strbuff);
+        snprintf(strbuff, sizeof(strbuff), "Debris: %zu",
+                 game.cave.debris.size());
+        al_draw_text(font, text_color, 20, ++stri * fontsize, 0, strbuff);
+        snprintf(strbuff, sizeof(strbuff), "Floor spiders: %zu",
+                 game.cave.floor_spiders.size());
+        al_draw_text(font, text_color, 20, ++stri * fontsize, 0, strbuff);
 
-      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Envelope points: %zu",
-              game.cave.floor_envelope.size());
-      FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Collisions: %zu",
-              game.collisions.size());
+        snprintf(strbuff, sizeof(strbuff), "Envelope points: %zu",
+                 game.cave.floor_envelope.size());
+        al_draw_text(font, text_color, 20, ++stri * fontsize, 0, strbuff);
+        snprintf(strbuff, sizeof(strbuff), "Collisions: %zu",
+                 game.collisions.size());
+        al_draw_text(font, text_color, 20, ++stri * fontsize, 0, strbuff);
+      }
+
+      al_flip_display();
+
+      redraw = false;
     }
 
-    if (!game.started) {
-      FC_Draw(bigfont.get(), sdl_renderer, 400, 150,
-              "           Welcome!"
-              "\n\n"
-              "  ASDF or Arrow Keys to move"
-              "\n"
-              "        Space to fire"
-              "\n"
-              "      Escape to give up"
-              "\n\n"
-              "Press Space to start the game."
-              "\n"
-              "          Good Luck",
-              game.score);
-    }
-    if (game.gameover && game.cave.boulders.empty() &&
-        game.cave.debris.empty()) {
-      FC_Draw(bigfont.get(), sdl_renderer, 550, 250,
-              "Game Over\n\nFinal Score\n%d", game.score);
-    }
-
-    SDL_RenderPresent(sdl_renderer);
     ++frame;
   }
 
-  SDL_DestroyRenderer(sdl_renderer);
-  SDL_DestroyWindow(window);
-  SDL_Quit();
+  al_destroy_font(font);
+  al_destroy_display(display);
+  al_destroy_timer(timer);
+  al_destroy_event_queue(queue);
 
   return 0;
+}
+
+int main(int argc, char** argv) {
+  return al_run_main(argc, argv, real_main);
 }

@@ -35,7 +35,7 @@ class Game
   bool gameover = false;
   bool debug = false;
   float multiplier = 1.0;
-  uint64_t score = 0;
+  int64_t score = 0;
 
  private:
   uint32_t time_;
