@@ -1,17 +1,32 @@
 #include "renderer.h"
 
-#include "util.h"
-
+#if SDL_GFX
 #include <SDL2_gfxPrimitives.h>
+#else
+#include "gl_gfx.h"
+#endif
+
+#define GLEW_STATIC
+#include <GL/glew.h>
 
 #include <cmath>
 #include <iostream>
 
+#include "util.h"
+
+#if SDL_GFX
 Renderer::Renderer(SDL_Renderer* renderer, int width, int height, float unit)
     : renderer_(renderer)
     , width_(width)
     , height_(height)
     , unit_(unit) {}
+#else
+Renderer::Renderer(const GlGFX& gfx, int width, int height, float unit)
+    : renderer_(gfx)
+    , width_(width)
+    , height_(height)
+    , unit_(unit) {}
+#endif
 
 Pixel Renderer::toPixel(float x, float y) const {
   return {.x = static_cast<int16_t>(x * height_),  // unit is height

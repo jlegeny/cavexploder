@@ -6,11 +6,18 @@
 #include <unordered_set>
 
 #include "game.h"
+#include "gl_gfx.h"
 #include "renderer.h"
 
 constexpr int WINDOW_WIDTH = 1280;
 constexpr int WINDOW_HEIGHT = 720;
 constexpr float UNIT = 10;
+
+static Vertex vertices[] = {
+    {0.0, 0.0, {1.0, 1.0, 0.0, 1.0}},   {1280.0, 0.0, {1.0, 1.0, 0.0, 1.0}},
+    {0.0, 720.0, {1.0, 1.0, 0.0, 1.0}}, {0.0, 0.0, {0.0, 1.0, 1.0, 1.0}},
+    {-1.0, 0.0, {1.0, 1.0, 0.0, 1.0}},  {0.0, -1.0, {0.0, 0.0, 1.0, 1.0}},
+};
 
 int main() {
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) !=
@@ -19,19 +26,22 @@ int main() {
     return -1;
   }
 
-  SDL_SetHint(SDL_HINT_RENDER_DRIVER, "metal");
+  // SDL_SetHint(SDL_HINT_RENDER_DRIVER, "metal");
 
   SDL_Window* window = SDL_CreateWindow(
       "Cave Horizotal Scrolling Shooter", SDL_WINDOWPOS_CENTERED,
-      SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0
+      SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_OPENGL
       /*SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI*/);
   if (window == NULL) {
     printf("Error creating window: %s\n", SDL_GetError());
     return -2;
   }
 
-  SDL_Renderer* sdl_renderer = SDL_CreateRenderer(
-      window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+#if SDL_GFX
+  SDL_Renderer* sdl_renderer =
+      SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED
+                         //| SDL_RENDERER_PRESENTVSYNC
+      );
   if (sdl_renderer == NULL) {
     printf("Error creating renderer: %s\n", SDL_GetError());
     return -3;
@@ -46,9 +56,15 @@ int main() {
               FC_MakeColor(0, 255, 0, 255), TTF_STYLE_NORMAL);
   FC_LoadFont(bigfont.get(), sdl_renderer, "IBMPlexMono-Medium.ttf", 30,
               FC_MakeColor(0, 255, 0, 255), TTF_STYLE_NORMAL);
+  Renderer renderer(sdl_renderer, WINDOW_WIDTH, WINDOW_HEIGHT, UNIT);
+#else
+  SDL_GLContext gl_context = SDL_GL_CreateContext(window);
+  SDL_GL_SetSwapInterval(1);
+  GlGFX gfx(WINDOW_WIDTH, WINDOW_HEIGHT);
+  Renderer renderer(gfx, WINDOW_WIDTH, WINDOW_HEIGHT, UNIT);
+#endif
 
   Game game;
-  Renderer renderer(sdl_renderer, WINDOW_WIDTH, WINDOW_HEIGHT, UNIT);
 
   uint32_t last_ticks = SDL_GetTicks();
   std::unordered_set<Command> commands;
@@ -79,10 +95,13 @@ int main() {
         }
       }
     }
-
     // Clear screen
+    /*
     SDL_SetRenderDrawColor(sdl_renderer, 0x03, 0x03, 0x03, 0xFF);
     SDL_RenderClear(sdl_renderer);
+    */
+
+    GL_GFX_Clear();
 
     commands.clear();
     const Uint8* kbd_state = SDL_GetKeyboardState(NULL);
@@ -112,6 +131,9 @@ int main() {
 
     renderer.draw(game);
 
+    printf("%f\n", 1000.f / dt);
+    fflush(stdout);
+#if SDL_GFX
     if (game.debug) {
       int stri = 0;
       FC_Draw(font.get(), sdl_renderer, 20, ++stri * 12, "Score: %d",
@@ -171,12 +193,33 @@ int main() {
       FC_Draw(bigfont.get(), sdl_renderer, 550, 250,
               "Game Over\n\nFinal Score\n%d", game.score);
     }
+#endif
 
+#if SDL_GFX
     SDL_RenderPresent(sdl_renderer);
+#else
+    gfx.flush();
+    SDL_GL_SwapWindow(window);
+#endif
+    /*
+    glUniform1f(uniform_width, WINDOW_WIDTH);
+    glUniform1f(uniform_height, WINDOW_HEIGHT);
+    glEnableVertexAttribArray(attribute_coord2d);
+    glEnableVertexAttribArray(attribute_color);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glDisableVertexAttribArray(attribute_coord2d);
+    glDisableVertexAttribArray(attribute_color);
+*/
+
     ++frame;
   }
 
+#if SDL_GFX
   SDL_DestroyRenderer(sdl_renderer);
+#else
+  gfx.deinit();
+#endif
+  SDL_GL_DeleteContext(gl_context);
   SDL_DestroyWindow(window);
   SDL_Quit();
 

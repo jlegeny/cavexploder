@@ -7,6 +7,9 @@
 
 #include "cave.h"
 #include "game.h"
+#ifndef SDL_GFX
+#include "gl_gfx.h"
+#endif
 
 struct Pixel {
   int16_t x, y;
@@ -15,7 +18,11 @@ struct Pixel {
 class Renderer
 {
  public:
+#if SDL_GFX
   Renderer(SDL_Renderer* renderer, int width, int height, float unit);
+#else
+  Renderer(const GlGFX& gfx, int width, int height, float unit);
+#endif
 
   void draw(const Game& game);
 
@@ -34,7 +41,11 @@ class Renderer
                     float offsety);
 
  private:
+#if SDL_GLX
   SDL_Renderer* renderer_;
+#else
+  const GlGFX& renderer_;
+#endif
   const int width_;
   const int height_;
   const int unit_;

@@ -19,8 +19,12 @@ if(WIN32)
 else()
   find_package(PkgConfig REQUIRED)
 
+  find_package(GLUT REQUIRED)
+  find_package(OpenGL REQUIRED)
+
   pkg_search_module(SDL2 REQUIRED sdl2)
   pkg_search_module(SDL2_TTF REQUIRED SDL2_ttf)
+  pkg_search_module(GLEW REQUIRED glew)
 endif()
 
 # SDL2 FontCache
@@ -44,6 +48,15 @@ include_directories(sdl2_gfx
     ${SDL2_INCLUDE_DIRS}
     "${CMAKE_SOURCE_DIR}/dep/src/SDL2_gfx/include")
 
+# GL GFX
+
+add_library(gl_gfx STATIC
+    gl_gfx.h gl_gfx.cpp
+    )
+include_directories(gl_gfx
+    ${GLEW_INCLUDE_DIRS}
+    )
+
 # game stuff
 
 add_library(game game.h game.cpp cave.h cave.cpp util.h util.cpp)
@@ -53,8 +66,19 @@ add_executable(${PROJECT_NAME} main.cpp renderer.cpp renderer.h)
 include_directories(${PROJECT_NAME}
     ${SDL2_INCLUDE_DIRS}
     ${SDL2_TTF_INCLUDE_DIRS}
-    ${SDL2_GFX_INCLUDE_DIRS}
+    #${SDL2_GFX_INCLUDE_DIRS}
+    ${GLEW_INCLUDE_DIRS}
     "${CMAKE_SOURCE_DIR}/dep/src/SDL2_FontCache/include"
     "${CMAKE_SOURCE_DIR}/dep/src/SDL2_gfx/include")
 
-target_link_libraries(HSS ${SDL2_LIBRARIES} ${SDL2_TTF_LIBRARIES} sdl2_gfx fontcache game)
+message("${SDL2_LIBRARIES}")
+target_link_libraries(HSS
+    ${SDL2_LIBRARIES}
+    ${SDL2_TTF_LIBRARIES}
+    ${OPENGL_LIBRARIES}
+    ${GLUT_LIBRARIES}
+    # sdl2_gfx
+    gl_gfx
+    glew
+    fontcache
+    game)
