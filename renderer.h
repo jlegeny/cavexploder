@@ -32,6 +32,9 @@ class Renderer
   void drawSpit(const Spit& spit, float offsetx, float offsety);
   void drawEnvelope(const std::map<float, float>& envelope, float offsetx,
                     float offsety);
+  void drawBackgroundLine(const BackgroundLine& prev,
+                          const BackgroundLine& next, float offsetx,
+                          float offsety);
 
  private:
   int width_;

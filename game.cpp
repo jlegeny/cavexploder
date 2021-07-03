@@ -286,6 +286,10 @@ void Game::update(uint32_t dt) {
   while (!cave.debris.empty() && cave.debris.front().dead) {
     cave.debris.pop_front();
   }
+  while ((cave.background.size() > 1) &&
+         cave.background.front().vertices.front().x < -0.5) {
+    cave.background.pop_front();
+  }
 
   checkCollisions();
 

@@ -8,15 +8,21 @@
 #include <random>
 #include <vector>
 
+enum class Biome {
+  CAVERN,
+};
+
 struct Point {
   float x, y;
 };
 
 struct Boulder {
+  Biome biome;
   float x, y;
   float r;
   int shade;
   int health;
+  bool destructible;
   bool dead;
   uint32_t damaged_cooldown;
   const std::vector<Point> vertices;
@@ -75,6 +81,12 @@ struct Spit {
   bool dead;
 };
 
+struct BackgroundLine {
+  Biome biome;
+  int shade;
+  std::vector<Point> vertices;
+};
+
 class Cave
 {
  public:
@@ -91,12 +103,17 @@ class Cave
   std::deque<Bullet> bullets;
   std::deque<Spit> spits;
   std::deque<Debris> debris;
+  std::deque<BackgroundLine> background;
 
  private:
-  std::vector<Point> generateVertices(float radius);
+  std::vector<Point> generateBoulderVertices(float radius);
+  std::vector<Point> generateBackgroundLineVertices(float x);
 
- private:
-  std::default_random_engine generator_;
+  int backgroundLineShade = 10;
+  int backgroundLineShadeDirection = 1;
+
+  std::default_random_engine cave_generator_;
+  std::default_random_engine random_generator_;
 };
 
 #endif // CAVE_H

@@ -22,6 +22,13 @@ Pixel Renderer::toPixel(float x, float y) const {
 }
 
 void Renderer::draw(const Game& game) {
+  auto prevbg = game.cave.background.begin();
+  auto nextbg = std::next(game.cave.background.begin());
+  for (; nextbg != game.cave.background.end(); ++nextbg) {
+    drawBackgroundLine(*prevbg, *nextbg, game.offsetx, game.offsety);
+    prevbg = nextbg;
+  }
+
   for (auto& [x, boulder] : game.cave.boulders) {
     if (boulder.dead) {
       continue;
@@ -212,4 +219,27 @@ void Renderer::drawEnvelope(const std::map<float, float>& envelope,
     lx = x;
     ly = y;
   }
+}
+
+void Renderer::drawBackgroundLine(const BackgroundLine& prev,
+                                  const BackgroundLine& next, float offsetx,
+                                  float offsety) {
+  if (next.vertices.size() < 2) {
+    return;
+  }
+  std::vector<float> vertices;
+  for (auto vertex : prev.vertices) {
+    Pixel p = toPixel(vertex.x - offsetx, vertex.y - offsety);
+    vertices.push_back(p.x);
+    vertices.push_back(p.y);
+  }
+  // for (auto vertex : next.vertices | std::views::reverse) {
+  for (auto it = next.vertices.rbegin(); it != next.vertices.rend(); ++it) {
+    Pixel p = toPixel(it->x - offsetx, it->y - offsety);
+    vertices.push_back(p.x);
+    vertices.push_back(p.y);
+  }
+  ALLEGRO_COLOR bg_color =
+      al_map_rgb(10 + next.shade / 2, 5 + next.shade / 2, next.shade / 2);
+  al_draw_filled_polygon(vertices.data(), vertices.size() / 2, bg_color);
 }

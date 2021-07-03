@@ -132,14 +132,14 @@ int real_main(int argc, char** argv) {
       if (game.gameover && game.cave.boulders.empty() &&
           game.cave.debris.empty()) {
         al_draw_text(big_font, text_color, 550, 250, 0, "Game Over");
-        snprintf(strbuff, sizeof(strbuff), "Final Score: %lld", game.score);
+        snprintf(strbuff, sizeof(strbuff), "Final Score: %" PRId64, game.score);
         al_draw_text(big_font, text_color, 550, 310, 0, strbuff);
       }
 
       if (game.debug) {
         const int fontsize = 18;
         int stri = 0;
-        snprintf(strbuff, sizeof(strbuff), "Score: %lld", game.score);
+        snprintf(strbuff, sizeof(strbuff), "Score: %" PRId64, game.score);
         al_draw_text(font, text_color, 20, ++stri * fontsize, 0, strbuff);
         // snprintf(strbuff, sizeof(strbuff), "FPS: %.1f", 1000.f / dt);
         snprintf(strbuff, sizeof(strbuff), "HP: %d", game.ship.health);
