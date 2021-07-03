@@ -34,16 +34,15 @@ class Game
   bool started = false;
   bool gameover = false;
   bool debug = false;
-  float multiplier = 1.0;
   int64_t score = 0;
 
  private:
   uint32_t time_;
-  float speed_ = 0.5;  // u/ms
   float last_gen = 0;
   int gameover_countdown = 2000;
   float gameover_slowdown = 1.0;
-  bool fired_forward = false;
+  float bullet_angle = 0.0;
+  float bullet_angle_delta = +M_PI / 16;
 
  private:
   std::default_random_engine generator_;

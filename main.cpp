@@ -144,7 +144,8 @@ int real_main(int argc, char** argv) {
         // snprintf(strbuff, sizeof(strbuff), "FPS: %.1f", 1000.f / dt);
         snprintf(strbuff, sizeof(strbuff), "HP: %d", game.ship.health);
         al_draw_text(font, text_color, 20, ++stri * fontsize, 0, strbuff);
-        snprintf(strbuff, sizeof(strbuff), "Multiplier: %.3f", game.multiplier);
+        snprintf(strbuff, sizeof(strbuff), "Multiplier: %.3f",
+                 game.ship.multiplier);
         al_draw_text(font, text_color, 20, ++stri * fontsize, 0, strbuff);
 
         std::string commands_str = "";

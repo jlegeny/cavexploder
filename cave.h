@@ -8,6 +8,8 @@
 #include <random>
 #include <vector>
 
+constexpr int ship_max_health = 1000;
+
 enum class Biome {
   CAVERN,
 };
@@ -32,6 +34,8 @@ struct Ship {
   float x, y;
   float vx, vy;
   float r;
+  float multiplier;
+  float speed;
   int32_t cannon_cooldown;
   int health;
   uint32_t damaged_cooldown;
@@ -109,8 +113,8 @@ class Cave
   std::vector<Point> generateBoulderVertices(float radius);
   std::vector<Point> generateBackgroundLineVertices(float x);
 
-  int backgroundLineShade = 10;
-  int backgroundLineShadeDirection = 1;
+  int background_line_shade = 10;
+  int background_line_shade_direction = 1;
 
   std::default_random_engine cave_generator_;
   std::default_random_engine random_generator_;

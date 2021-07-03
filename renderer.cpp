@@ -22,10 +22,24 @@ Pixel Renderer::toPixel(float x, float y) const {
 }
 
 void Renderer::draw(const Game& game) {
+  static std::uniform_real_distribution<float> d(0, 1);
+
+  float bg_offsetx = game.offsetx * 1.1 + (game.ship.x - game.offsetx) / 10.;
+  float bg_offsety = game.offsety;
+  float mp_offsetx = game.offsetx;
+  float mp_offsety = game.offsety;
+
+  if (game.ship.damaged_cooldown) {
+    mp_offsety +=
+        (d(random_generator_) - 0.5) * game.ship.damaged_cooldown / 1000;
+    mp_offsetx +=
+        (d(random_generator_) - 0.5) * game.ship.damaged_cooldown / 1000;
+  }
+
   auto prevbg = game.cave.background.begin();
   auto nextbg = std::next(game.cave.background.begin());
   for (; nextbg != game.cave.background.end(); ++nextbg) {
-    drawBackgroundLine(*prevbg, *nextbg, game.offsetx, game.offsety);
+    drawBackgroundLine(*prevbg, *nextbg, bg_offsetx, bg_offsety);
     prevbg = nextbg;
   }
 
@@ -33,30 +47,29 @@ void Renderer::draw(const Game& game) {
     if (boulder.dead) {
       continue;
     }
-    drawBoulder(boulder, game.offsetx, game.offsety);
+    drawBoulder(boulder, mp_offsetx, mp_offsety);
 
     if (game.debug) {
       if (game.ship.x - 0.1 < x && x < game.ship.x + 0.1) {
-        drawBoulderOutline(boulder, game.offsetx, game.offsety, {0, 0, 255});
+        drawBoulderOutline(boulder, mp_offsetx, mp_offsety, {0, 0, 255});
       }
     }
   }
 
   if (game.debug) {
-    drawEnvelope(game.cave.floor_envelope, game.offsetx, game.offsety);
+    drawEnvelope(game.cave.floor_envelope, mp_offsetx, mp_offsety);
   }
 
   for (auto& debris : game.cave.debris) {
     if (debris.dead) {
       continue;
     }
-    drawDebris(debris, game.offsetx, game.offsety);
+    drawDebris(debris, mp_offsetx, mp_offsety);
   }
 
   if (game.debug) {
     if (!game.collisions.empty()) {
-      Pixel bc =
-          toPixel(game.ship.x - game.offsetx, game.ship.y - game.offsety);
+      Pixel bc = toPixel(game.ship.x - mp_offsetx, game.ship.y - mp_offsety);
       al_draw_circle(bc.x, bc.y, game.ship.r * height_, {255, 0, 255, 255}, 2);
     }
 
@@ -64,8 +77,8 @@ void Renderer::draw(const Game& game) {
       if (boulder.dead) {
         continue;
       }
-      drawBoulderOutline(boulder, game.offsetx, game.offsety, {255, 255, 255});
-      Pixel bc = toPixel(boulder.x - game.offsetx, boulder.y - game.offsety);
+      drawBoulderOutline(boulder, mp_offsetx, mp_offsety, {255, 255, 255});
+      Pixel bc = toPixel(boulder.x - mp_offsetx, boulder.y - mp_offsety);
       al_draw_circle(bc.x, bc.y, boulder.r * height_, {255, 255, 0, 255}, 2);
     }
   }
@@ -74,22 +87,24 @@ void Renderer::draw(const Game& game) {
     if (spider.dead) {
       continue;
     }
-    drawSpider(spider, game.offsetx, game.offsety);
+    drawSpider(spider, mp_offsetx, mp_offsety);
   }
   if (!game.gameover) {
-    drawShip(game.ship, game.offsetx, game.offsety);
+    drawShip(game.ship, mp_offsetx, mp_offsety);
   }
 
   for (auto& bullet : game.cave.bullets) {
     if (!bullet.dead) {
-      drawBullet(bullet, game.offsetx, game.offsety);
+      drawBullet(bullet, mp_offsetx, mp_offsety);
     }
   }
   for (auto& spit : game.cave.spits) {
     if (!spit.dead) {
-      drawSpit(spit, game.offsetx, game.offsety);
+      drawSpit(spit, mp_offsetx, mp_offsety);
     }
   }
+
+  drawHealth(game.ship, ship_max_health);
 }
 
 void Renderer::drawShip(const Ship& ship, float offsetx, float offsety) {
@@ -242,4 +257,16 @@ void Renderer::drawBackgroundLine(const BackgroundLine& prev,
   ALLEGRO_COLOR bg_color =
       al_map_rgb(10 + next.shade / 2, 5 + next.shade / 2, next.shade / 2);
   al_draw_filled_polygon(vertices.data(), vertices.size() / 2, bg_color);
+}
+
+void Renderer::drawHealth(const Ship& ship, int max_health) {
+  const ALLEGRO_COLOR health_color =
+      al_map_rgb(255, ship.damaged_cooldown * 2, ship.damaged_cooldown * 2);
+  float frac = static_cast<float>(std::max(0, ship.health)) / max_health;
+  float ratio = static_cast<float>(width_) / height_;
+
+  Pixel pa = toPixel(0.5 * ratio - frac / 2., 0);
+  Pixel pb = toPixel(0.5 * ratio + frac / 2., 0.01);
+
+  al_draw_filled_rectangle(pa.x, pa.y, pb.x, pb.y, health_color);
 }

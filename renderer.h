@@ -35,10 +35,13 @@ class Renderer
   void drawBackgroundLine(const BackgroundLine& prev,
                           const BackgroundLine& next, float offsetx,
                           float offsety);
+  void drawHealth(const Ship& ship, int max_health);
 
  private:
   int width_;
   int height_;
+
+  std::default_random_engine random_generator_;
 };
 
 #endif // RENDERER_H

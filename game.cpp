@@ -13,7 +13,7 @@ constexpr float horizontal_deceleration = 0.3;
 constexpr float horizontal_speed = 0.2;
 
 constexpr float bullet_speed = 0.0223;
-constexpr float cannon_speed = 100;
+constexpr float cannon_speed = 70;
 constexpr int bullet_damage = 100;
 
 constexpr float gravity = 2.91;
@@ -24,7 +24,9 @@ Game::Game()
   ship.x = 0.1;
   ship.y = 0.5;
   ship.r = 0.0125;
-  ship.health = 1000;
+  ship.multiplier = 1.0;
+  ship.speed = 0.5;
+  ship.health = ship_max_health;
   last_gen = 1.8f;
   cave.generate(0.f, last_gen);
 }
@@ -59,26 +61,22 @@ void Game::commands(const std::unordered_set<Command>& commands) {
   }
 
   if (ship.cannon_cooldown == 0 && commands.count(Command::FIRE)) {
-    if (fired_forward) {
-      cave.bullets.push_back({.x = ship.x,
-                              .y = ship.y,
-                              .vx = sqrtf(3.f) / 2.f,
-                              .vy = 0.5f,
-                              .nx = 0.5f,
-                              .ny = -sqrtf(3.f) / 2.f,
-                              .damage = bullet_damage,
-                              .dead = false});
-    } else {
-      cave.bullets.push_back({.x = ship.x,
-                              .y = ship.y,
-                              .vx = 1.f,
-                              .vy = 0.f,
-                              .nx = 0.f,
-                              .ny = 1.f,
-                              .damage = bullet_damage,
-                              .dead = false});
+    cave.bullets.push_back({.x = ship.x,
+                            .y = ship.y,
+                            .vx = cosf(bullet_angle),
+                            .vy = sinf(bullet_angle),
+                            .nx = sinf(bullet_angle),
+                            .ny = -cosf(bullet_angle),
+                            .damage = bullet_damage,
+                            .dead = false});
+    bullet_angle += bullet_angle_delta;
+    if (bullet_angle < 0) {
+      bullet_angle = 0;
+      bullet_angle_delta *= -1;
+    } else if (bullet_angle > M_PI / 4) {
+      bullet_angle = M_PI / 4;
+      bullet_angle_delta *= -1;
     }
-    fired_forward = !fired_forward;
     ship.cannon_cooldown = cannon_speed;
   }
 };
@@ -114,8 +112,8 @@ void Game::checkCollisions() {
           (boulder.r) * (boulder.r)) {
         bullet.dead = true;
         boulder.damaged_cooldown = 50;
-        boulder.health -= bullet.damage * multiplier;
-        score += 50 * boulder.r * multiplier;
+        boulder.health -= bullet.damage * ship.multiplier;
+        score += 50 * boulder.r * ship.multiplier;
       }
     }
   }
@@ -126,8 +124,8 @@ void Game::update(uint32_t dt) {
   if (!started) {
     return;
   }
-  const float dts = dt / 1000.f;
-  const float offset = dts * speed_ * gameover_slowdown * multiplier;
+  const float dts = std::min(dt / 1000.f, 1.f);
+  const float offset = dts * ship.speed * gameover_slowdown * ship.multiplier;
 
   ship.y += ship.vy * vertical_speed * dts;
   ship.x += ship.vx * horizontal_speed * dts;
@@ -323,9 +321,9 @@ void Game::update(uint32_t dt) {
       }
       gameover = true;
     }
-    multiplier = std::max(multiplier - dts * 3, 1.f);
+    ship.multiplier = std::max(ship.multiplier - dts * 3, 1.f);
   } else {
-    multiplier += 0.03 * dts;
+    ship.multiplier += 0.03 * dts;
   }
 
   if (gameover) {
@@ -343,6 +341,6 @@ void Game::update(uint32_t dt) {
       gameover_countdown = -1;
     }
   } else {
-    score += multiplier * multiplier * dt;
+    score += ship.multiplier * ship.multiplier * dt;
   }
 }

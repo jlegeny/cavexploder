@@ -97,10 +97,10 @@ void Cave::explodeBoulder(const Boulder &boulder) {
 
 void Cave::spiderSpit(const Spider &spider, const Ship &ship) {
   static std::uniform_real_distribution<float> d_r(0.004, 0.007);
-  float ship_speed = 0.5;
 
   float vx =
-      (ship.x + ship_speed / spider.spit_speed - spider.x) * spider.spit_speed;
+      (ship.x + ship.multiplier * ship.speed / spider.spit_speed - spider.x) *
+      spider.spit_speed;
   float vy = (ship.y - spider.y) * spider.spit_speed;
 
   spits.push_back({
@@ -133,18 +133,19 @@ void Cave::generate(float startx, float endx) {
   if (d(cave_generator_) < background_line_probablity) {
     BackgroundLine bl = {
         .biome = Biome::CAVERN,
-        .shade = backgroundLineShade,
-        .vertices = generateBackgroundLineVertices(endx),
+        .shade = background_line_shade,
+        .vertices = generateBackgroundLineVertices(endx * 1.1),
     };
     background.push_back(bl);
   }
-  backgroundLineShade += backgroundLineShadeDirection;
-  if (backgroundLineShade == 1 && backgroundLineShadeDirection == -1) {
-    backgroundLineShadeDirection = 1;
-  } else if (backgroundLineShade == 47 && backgroundLineShadeDirection == 1) {
-    backgroundLineShadeDirection = -1;
+  background_line_shade += background_line_shade_direction;
+  if (background_line_shade == 1 && background_line_shade_direction == -1) {
+    background_line_shade_direction = 1;
+  } else if (background_line_shade == 47 &&
+             background_line_shade_direction == 1) {
+    background_line_shade_direction = -1;
   } else if (d(cave_generator_) < background_line_shade_shift_probablity) {
-    backgroundLineShadeDirection *= -1;
+    background_line_shade_direction *= -1;
   }
 
   // ceiling
